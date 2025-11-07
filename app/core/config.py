@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     smtp_port: int = Field(
         default=587,
         alias="SMTP_PORT",
-        ge=1, le=65535,
+        ge=1,
+        le=65535,
         description="SMTP server port",
     )
     smtp_user: str = Field(
@@ -80,20 +81,22 @@ class Settings(BaseSettings):
     api_key_length: int = Field(
         default=32,
         alias="API_KEY_LENGTH",
-        ge=16, le=128,
+        ge=16,
+        le=128,
         description="Length of generated API keys",
     )
 
     # Security settings
     cors_origins: Optional[List[str]] = Field(
         default=None,
-        alias="CORS_ORIGINS", 
+        alias="CORS_ORIGINS",
         description="Comma-separated list of allowed CORS origins",
     )
     max_request_size: int = Field(
         default=262144,  # 256KB
         alias="MAX_REQUEST_SIZE",
-        ge=1024, le=10485760,  # 1KB to 10MB
+        ge=1024,
+        le=10485760,  # 1KB to 10MB
         description="Maximum request body size in bytes",
     )
 
@@ -104,7 +107,7 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed domains for recipients",
     )
 
-    @validator('cors_origins', pre=True)
+    @validator("cors_origins", pre=True)
     def parse_cors_origins(cls, v):
         """Parse comma-separated CORS origins."""
         if v is None or v == "":
@@ -113,7 +116,7 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
-    @validator('allow_domains', pre=True)
+    @validator("allow_domains", pre=True)
     def parse_domains(cls, v):
         """Parse comma-separated domains."""
         if v is None or v == "":
@@ -122,29 +125,31 @@ class Settings(BaseSettings):
             return [domain.strip() for domain in v.split(",") if domain.strip()]
         return v
 
-    @validator('smtp_starttls', pre=True)
+    @validator("smtp_starttls", pre=True)
     def parse_smtp_starttls(cls, v):
         """Parse SMTP_STARTTLS as boolean from string."""
         if isinstance(v, str):
-            return v.lower() in ('1', 'true', 'yes', 'on')
+            return v.lower() in ("1", "true", "yes", "on")
         return bool(v)
 
-    @validator('database_url')
+    @validator("database_url")
     def validate_database_url(cls, v):
         """Validate database URL format."""
         # Allow SQLite URLs for testing
-        if v.startswith(('sqlite:///', 'sqlite+aiosqlite:///')):
+        if v.startswith(("sqlite:///", "sqlite+aiosqlite:///")):
             return v
         # Require PostgreSQL URLs for production
-        if not v.startswith(('postgresql://', 'postgresql+asyncpg://')):
-            raise ValueError('DATABASE_URL must be a PostgreSQL URL (or SQLite for testing)')
+        if not v.startswith(("postgresql://", "postgresql+asyncpg://")):
+            raise ValueError(
+                "DATABASE_URL must be a PostgreSQL URL (or SQLite for testing)"
+            )
         return v
 
-    @validator('from_email')
+    @validator("from_email")
     def validate_from_email(cls, v):
         """Basic email validation."""
-        if '@' not in v or '.' not in v.split('@')[-1]:
-            raise ValueError('FROM_EMAIL must be a valid email address')
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("FROM_EMAIL must be a valid email address")
         return v
 
     def model_post_init(self, __context):
@@ -154,11 +159,13 @@ class Settings(BaseSettings):
             if not self.debug:
                 raise ValueError(
                     "SECRET_KEY must be changed in production! "
-                    "Generate a secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+                    "Generate a secure key with: "
+                    "python -c 'import secrets; print(secrets.token_urlsafe(32))'"
                 )
 
         # Log configuration summary (without sensitive data)
         import structlog
+
         logger = structlog.get_logger(__name__)
         logger.info(
             "Configuration loaded",
@@ -180,5 +187,8 @@ def get_settings() -> Settings:
     except Exception as e:
         print(f"❌ Configuration Error: {e}")
         print("💡 Check your environment variables and .env file")
-        print("📋 Required variables: DATABASE_URL, SMTP_HOST, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL, SECRET_KEY")
+        print(
+            "📋 Required variables: DATABASE_URL, SMTP_HOST, SMTP_USER, "
+            "SMTP_PASSWORD, FROM_EMAIL, SECRET_KEY"
+        )
         raise SystemExit(1) from e

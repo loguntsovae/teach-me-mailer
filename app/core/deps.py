@@ -1,13 +1,12 @@
 from typing import AsyncGenerator, Optional
-import uuid
 
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings, Settings
+from app.core.config import Settings, get_settings
 from app.db.session import get_async_session
-from app.services.auth import AuthService, AuthResult
 from app.models.api_key import APIKey
+from app.services.auth import AuthResult, AuthService
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -40,9 +39,9 @@ async def get_current_api_key(
             detail="Missing X-API-Key header",
             headers={"WWW-Authenticate": "X-API-Key"},
         )
-    
+
     result, api_key_obj = await auth_service.validate_api_key_detailed(x_api_key)
-    
+
     if result == AuthResult.INACTIVE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -55,5 +54,5 @@ async def get_current_api_key(
             detail="Invalid API key",
             headers={"WWW-Authenticate": "X-API-Key"},
         )
-    
+
     return api_key_obj

@@ -1,7 +1,7 @@
 # 🚀 Teach Me Mailer
 
-[![CI/CD](https://github.com/loguntsovae/teach-me-mailer/workflows/CI/badge.svg)](https://github.com/loguntsovae/teach-me-mailer/actions)
-[![Coverage](https://codecov.io/gh/loguntsovae/teach-me-mailer/branch/main/graph/badge.svg)](https://codecov.io/gh/loguntsovae/teach-me-mailer)
+[![CI](https://github.com/loguntsovae/teach-me-mailer/actions/workflows/ci.yml/badge.svg)](https://github.com/loguntsovae/teach-me-mailer/actions)
+[![codecov](https://codecov.io/gh/loguntsovae/teach-me-mailer/branch/main/graph/badge.svg)](https://codecov.io/gh/loguntsovae/teach-me-mailer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)

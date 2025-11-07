@@ -4,18 +4,16 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Callable
 
+# Sentry integration for error tracking and performance monitoring
+import sentry_sdk
+import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
-
-import structlog
-
-# Sentry integration for error tracking and performance monitoring
-import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.core.config import get_settings
 from app.api.v1 import routes
+from app.core.config import get_settings
 
 # Initialize Sentry SDK
 sentry_sdk.init(
@@ -25,20 +23,30 @@ sentry_sdk.init(
     environment="dev",
 )
 
+
 # Configure structured logging
 def mask_sensitive_data(event_dict):
     """Mask sensitive data in log events."""
     SENSITIVE_KEYS = {
-        'password', 'secret', 'key', 'token', 'auth', 'credential',
-        'smtp_password', 'smtp_user', 'api_key', 'x_api_key',
-        'secret_key', 'database_url'
+        "password",
+        "secret",
+        "key",
+        "token",
+        "auth",
+        "credential",
+        "smtp_password",
+        "smtp_user",
+        "api_key",
+        "x_api_key",
+        "secret_key",
+        "database_url",
     }
-    
+
     def mask_dict(data, path=""):
         if isinstance(data, dict):
             masked = {}
             for key, value in data.items():
-                key_lower = key.lower().replace('-', '_')
+                key_lower = key.lower().replace("-", "_")
                 if any(sensitive in key_lower for sensitive in SENSITIVE_KEYS):
                     masked[key] = "***MASKED***"
                 else:
@@ -46,28 +54,32 @@ def mask_sensitive_data(event_dict):
             return masked
         elif isinstance(data, str):
             # Mask values that look like credentials (long strings with mixed case/numbers)
-            if len(data) > 20 and any(c.isdigit() for c in data) and any(c.isupper() for c in data):
+            if (
+                len(data) > 20
+                and any(c.isdigit() for c in data)
+                and any(c.isupper() for c in data)
+            ):
                 return f"{data[:4]}***MASKED***{data[-4:]}"
             return data
         elif isinstance(data, list):
             return [mask_dict(item, path) for item in data]
         else:
             return data
-    
+
     return mask_dict(event_dict)
 
 
 def configure_logging():
     """Configure JSON structured logging to stdout with secret masking."""
     settings = get_settings()
-    
+
     # Configure standard library logging
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
         level=getattr(logging, settings.log_level.upper()),
     )
-    
+
     # Configure structlog with secret masking
     structlog.configure(
         processors=[
@@ -91,18 +103,18 @@ async def request_id_middleware(request: Request, call_next: Callable) -> Respon
     """Add request_id to all requests for tracing."""
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
-    
+
     # Add request_id to structlog context
     structlog.contextvars.bind_contextvars(request_id=request_id)
-    
+
     response = await call_next(request)
-    
+
     # Add request_id to response headers
     response.headers["X-Request-ID"] = request_id
-    
+
     # Clear context after request
     structlog.contextvars.clear_contextvars()
-    
+
     return response
 
 
@@ -113,16 +125,16 @@ async def lifespan(app: FastAPI):
     configure_logging()
     logger = structlog.get_logger(__name__)
     settings = get_settings()
-    
+
     logger.info(
         "Application starting up",
         app_name=settings.app_name,
         version=settings.app_version,
         debug=settings.debug,
     )
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Application shutting down")
 
@@ -130,7 +142,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
     settings = get_settings()
-    
+
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
@@ -145,27 +157,27 @@ def create_app() -> FastAPI:
             {"name": "metrics", "description": "Prometheus metrics"},
         ],
     )
-    
+
     # Add request ID middleware for tracing
     app.middleware("http")(request_id_middleware)
-    
+
     # Add request size limiting (configurable)
     @app.middleware("http")
     async def limit_request_size(request: Request, call_next: Callable) -> Response:
         """Limit request body size to prevent abuse."""
         max_size = settings.max_request_size
-        
+
         if request.headers.get("content-length"):
             content_length = int(request.headers["content-length"])
             if content_length > max_size:
                 return Response(
                     status_code=413,
                     content=f'{{"detail": "Request entity too large. Maximum size is {max_size // 1024}KB."}}',
-                    media_type="application/json"
+                    media_type="application/json",
                 )
-        
+
         return await call_next(request)
-    
+
     # Add CORS middleware - restrictive by default
     cors_origins = []
     if settings.debug and not settings.cors_origins:
@@ -173,34 +185,45 @@ def create_app() -> FastAPI:
         cors_origins = ["http://localhost:3000", "http://localhost:8080"]
     elif settings.cors_origins:
         cors_origins = settings.cors_origins
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=False,  # Don't allow credentials for security
         allow_methods=["GET", "POST"],  # Only allow necessary methods
-        allow_headers=["X-API-Key", "Content-Type", "X-Request-ID"],  # Only necessary headers
+        allow_headers=[
+            "X-API-Key",
+            "Content-Type",
+            "X-Request-ID",
+        ],  # Only necessary headers
     )
-    
+
     # Setup Prometheus metrics (skip during testing to avoid registry conflicts)
     import os
+
     if os.getenv("PYTEST_CURRENT_TEST") is None:  # Not running in pytest
         instrumentator = Instrumentator(
             should_group_status_codes=False,
             should_ignore_untemplated=True,
             should_instrument_requests_inprogress=True,
-            excluded_handlers=["/metrics", "/health", "/docs", "/redoc", "/openapi.json"],
+            excluded_handlers=[
+                "/metrics",
+                "/health",
+                "/docs",
+                "/redoc",
+                "/openapi.json",
+            ],
         )
         instrumentator.instrument(app)
         instrumentator.expose(app, endpoint="/metrics", tags=["metrics"])
-    
+
     # Include API routes
     app.include_router(
         routes.router,
         prefix="/api/v1",
         tags=["mail"],
     )
-    
+
     # Add health endpoint at root level
     app.include_router(
         routes.router,
@@ -208,7 +231,7 @@ def create_app() -> FastAPI:
         tags=["health"],
         include_in_schema=False,
     )
-    
+
     return app
 
 
@@ -232,7 +255,7 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     settings = get_settings()
     uvicorn.run(
         "app.main:app",

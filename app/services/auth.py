@@ -1,25 +1,22 @@
 import secrets
-from datetime import datetime
-from typing import Optional, Tuple
 import uuid
 from enum import Enum
+from typing import Optional, Tuple
 
 import bcrypt
+import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import func
-
-import structlog
 
 from app.core.config import Settings
 from app.models.api_key import APIKey
-
 
 logger = structlog.get_logger(__name__)
 
 
 class AuthResult(Enum):
     """Authentication result types."""
+
     VALID = "valid"
     INVALID = "invalid"
     INACTIVE = "inactive"
@@ -33,15 +30,17 @@ class AuthService:
     def _hash_api_key(self, api_key: str) -> str:
         """Hash API key using bcrypt."""
         salt = bcrypt.gensalt()
-        return bcrypt.hashpw(api_key.encode('utf-8'), salt).decode('utf-8')
+        return bcrypt.hashpw(api_key.encode("utf-8"), salt).decode("utf-8")
 
     def _verify_api_key(self, api_key: str, hashed: str) -> bool:
         """Verify API key against hash."""
-        return bcrypt.checkpw(api_key.encode('utf-8'), hashed.encode('utf-8'))
+        return bcrypt.checkpw(api_key.encode("utf-8"), hashed.encode("utf-8"))
 
-    async def validate_api_key_detailed(self, api_key: str) -> Tuple[AuthResult, Optional[APIKey]]:
+    async def validate_api_key_detailed(
+        self, api_key: str
+    ) -> Tuple[AuthResult, Optional[APIKey]]:
         """Validate an API key and return detailed result.
-        
+
         Returns:
             tuple: (AuthResult, APIKey object if valid)
         """
@@ -91,13 +90,13 @@ class AuthService:
         daily_limit: Optional[int] = None,
     ) -> tuple[APIKey, str]:
         """Create a new API key.
-        
+
         Returns:
             tuple: (APIKey object, plain text API key)
         """
         # Generate secure random key
         api_key = secrets.token_urlsafe(self.settings.api_key_length)
-        
+
         # Hash the API key
         key_hash = self._hash_api_key(api_key)
 

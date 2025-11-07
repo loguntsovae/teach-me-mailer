@@ -34,23 +34,15 @@ def test_send_endpoint_requires_api_key(client):
     """Test that send endpoint requires X-API-Key header."""
     response = client.post(
         "/api/v1/send",
-        json={
-            "to": ["test@example.com"],
-            "subject": "Test",
-            "body_text": "Hello!"
-        }
+        json={"to": ["test@example.com"], "subject": "Test", "body_text": "Hello!"},
     )
     assert response.status_code == 401  # Missing authentication
-    
+
     # Test with invalid API key
     response = client.post(
         "/api/v1/send",
         headers={"X-API-Key": "invalid-key"},
-        json={
-            "to": ["test@example.com"],
-            "subject": "Test", 
-            "body_text": "Hello!"
-        }
+        json={"to": ["test@example.com"], "subject": "Test", "body_text": "Hello!"},
     )
     assert response.status_code == 401
     assert "WWW-Authenticate" in response.headers
@@ -61,12 +53,9 @@ def test_usage_endpoint_requires_api_key(client):
     """Test that usage endpoint requires X-API-Key header."""
     response = client.get("/api/v1/usage")
     assert response.status_code == 401  # Missing authentication
-    
+
     # Test with invalid API key
-    response = client.get(
-        "/api/v1/usage",
-        headers={"X-API-Key": "invalid-key"}
-    )
+    response = client.get("/api/v1/usage", headers={"X-API-Key": "invalid-key"})
     assert response.status_code == 401
     assert "WWW-Authenticate" in response.headers
     assert response.headers["WWW-Authenticate"] == "X-API-Key"

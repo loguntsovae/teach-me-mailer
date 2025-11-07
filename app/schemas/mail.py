@@ -10,15 +10,15 @@ class MailRequest(BaseModel):
     html: Optional[str] = Field(None, description="HTML email body")
     text: Optional[str] = Field(None, description="Plain text email body")
     headers: Optional[Dict[str, str]] = Field(None, description="Custom email headers")
-    
-    @validator('html', 'text')
+
+    @validator("html", "text")
     def validate_body_required(cls, v, values):
         """Ensure either html or text is provided."""
-        html = values.get('html') if 'html' in values else v
-        text = values.get('text') if 'text' in values else v
-        
+        html = values.get("html") if "html" in values else v
+        text = values.get("text") if "text" in values else v
+
         if not html and not text:
-            raise ValueError('Either html or text body is required')
+            raise ValueError("Either html or text body is required")
         return v
 
     class Config:

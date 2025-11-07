@@ -1,13 +1,13 @@
 import asyncio
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.main import create_app
 from app.core.config import Settings
 from app.db.base import Base
-
+from app.main import create_app
 
 # Test database URL (use sqlite for testing)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -25,13 +25,13 @@ def event_loop():
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    
+
     # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Clean up
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -46,7 +46,7 @@ async def test_session(test_engine):
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with TestSessionLocal() as session:
         yield session
 
@@ -70,21 +70,21 @@ def test_settings():
 async def test_app(test_session, test_settings):
     """Create test FastAPI application."""
     app = create_app()
-    
+
     # Override dependencies
     from app.core.deps import get_db, get_settings_dependency
-    
+
     async def override_get_db():
         yield test_session
-    
+
     def override_get_settings():
         return test_settings
-    
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_settings_dependency] = override_get_settings
-    
+
     yield app
-    
+
     # Clean up
     app.dependency_overrides.clear()
 
@@ -93,5 +93,8 @@ async def test_app(test_session, test_settings):
 async def client(test_app):
     """Create test HTTP client."""
     from httpx import ASGITransport
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://testserver") as ac:
+
+    async with AsyncClient(
+        transport=ASGITransport(app=test_app), base_url="http://testserver"
+    ) as ac:
         yield ac

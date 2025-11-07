@@ -271,21 +271,20 @@ docker-push:
 # Test SMTP connectivity
 test-smtp:
 	@echo "$(BLUE)📧 Testing SMTP connection...$(RESET)"
-	python3 -c "
-import asyncio
-import sys
-from app.services.mailer import MailerService
-from app.core.config import get_settings
-async def test():
-    try:
-        service = MailerService()
-        await service.test_connection()
-        print('$(GREEN)✅ SMTP connection successful$(RESET)')
-    except Exception as e:
-        print(f'$(RED)❌ SMTP connection failed: {e}$(RESET)')
-        sys.exit(1)
-asyncio.run(test())
-"
+	@python3 -c "\
+import asyncio; \
+import sys; \
+from app.services.mailer import MailerService; \
+from app.core.config import get_settings; \
+async def test(): \
+    try: \
+        service = MailerService(); \
+        await service.test_connection(); \
+        print('$(GREEN)✅ SMTP connection successful$(RESET)'); \
+    except Exception as e: \
+        print(f'$(RED)❌ SMTP connection failed: {e}$(RESET)'); \
+        sys.exit(1); \
+asyncio.run(test())"
 
 # Check rate limits
 check-limits:
