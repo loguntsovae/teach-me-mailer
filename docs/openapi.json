@@ -1,0 +1,326 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Teach Me Mailer API",
+    "description": "A production-ready email service API built with FastAPI.\n\n## Features\n\n- 🔐 **Secure Authentication**: API key-based authentication with bcrypt hashing\n- ⚡ **Rate Limiting**: Atomic rate limiting per API key with PostgreSQL\n- 📧 **Reliable Email Delivery**: SMTP with STARTTLS encryption\n- 📊 **Comprehensive Observability**: Prometheus metrics and structured logging\n- 🧪 **Well Tested**: 100% test coverage with comprehensive test suite\n\n## Authentication\n\nAll endpoints require authentication using the `X-API-Key` header:\n\n```\nX-API-Key: sk_test_your_api_key_here\n```\n\nAPI keys can be created using the provided management scripts or admin interface.\n\n## Rate Limiting\n\nEach API key has configurable daily email limits. When the limit is exceeded,\nthe API returns a 429 status code. Rate limits reset daily at midnight UTC.\n\n## Error Handling\n\nThe API uses standard HTTP status codes and returns structured error responses:\n\n- `200` - Success\n- `202` - Accepted (for async operations)\n- `401` - Unauthorized (invalid API key)\n- `422` - Unprocessable Entity (validation error)\n- `429` - Too Many Requests (rate limit exceeded)\n- `500` - Internal Server Error",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Teach Me Mailer Support",
+      "url": "https://github.com/loguntsovae/teach-me-mailer",
+      "email": "support@example.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "termsOfService": "https://github.com/loguntsovae/teach-me-mailer/blob/main/LICENSE"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "email",
+      "description": "Email sending operations"
+    },
+    {
+      "name": "health",
+      "description": "Health check and monitoring"
+    },
+    {
+      "name": "metrics",
+      "description": "Prometheus metrics endpoint"
+    }
+  ],
+  "paths": {
+    "/api/v1/send": {
+      "post": {
+        "summary": "Send Email",
+        "description": "Send an email with rate limiting and background processing. The email is queued for delivery and processed asynchronously.",
+        "operationId": "send_email_api_v1_send_post",
+        "tags": ["email"],
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              },
+              "examples": {
+                "basic_email": {
+                  "summary": "Basic email example",
+                  "value": {
+                    "to": "user@example.com",
+                    "subject": "Welcome to our service!",
+                    "html_body": "<h1>Welcome!</h1><p>Thank you for signing up.</p>",
+                    "text_body": "Welcome! Thank you for signing up."
+                  }
+                },
+                "with_headers": {
+                  "summary": "Email with custom headers",
+                  "value": {
+                    "to": "user@example.com",
+                    "subject": "Newsletter Update",
+                    "html_body": "<h2>Latest News</h2><p>Check out our latest updates.</p>",
+                    "text_body": "Latest News: Check out our latest updates.",
+                    "headers": {
+                      "Reply-To": "noreply@example.com",
+                      "X-Priority": "1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Email queued for delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns the health status of the service including database connectivity and system information.",
+        "operationId": "health_check_health_get",
+        "tags": ["health"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus Metrics",
+        "description": "Returns Prometheus-formatted metrics for monitoring and observability.",
+        "operationId": "prometheus_metrics_metrics_get",
+        "tags": ["metrics"],
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication. Format: sk_test_* or sk_live_*"
+      }
+    },
+    "schemas": {
+      "EmailRequest": {
+        "type": "object",
+        "required": ["to", "subject"],
+        "properties": {
+          "to": {
+            "type": "string",
+            "format": "email",
+            "description": "Recipient email address",
+            "example": "user@example.com"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line",
+            "example": "Welcome to our service!"
+          },
+          "html_body": {
+            "type": "string",
+            "description": "HTML email body content",
+            "example": "<h1>Welcome!</h1><p>Thank you for signing up.</p>"
+          },
+          "text_body": {
+            "type": "string",
+            "description": "Plain text email body content",
+            "example": "Welcome! Thank you for signing up."
+          },
+          "headers": {
+            "type": "object",
+            "description": "Optional custom email headers",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "Reply-To": "noreply@example.com",
+              "X-Priority": "1"
+            }
+          }
+        }
+      },
+      "EmailResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Email queued for delivery"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the email send request",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Invalid API key"
+          }
+        }
+      },
+      "RateLimitError": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Rate limit error message",
+            "example": "Daily email limit exceeded"
+          },
+          "retry_after": {
+            "type": "integer",
+            "description": "Seconds until rate limit resets",
+            "example": 3600
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "loc": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "msg": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Overall health status",
+            "example": "healthy"
+          },
+          "version": {
+            "type": "string",
+            "description": "Application version",
+            "example": "1.0.0"
+          },
+          "checks": {
+            "type": "object",
+            "description": "Individual health check results",
+            "properties": {
+              "database": {
+                "type": "string",
+                "description": "Database connectivity status",
+                "example": "healthy"
+              },
+              "smtp": {
+                "type": "string", 
+                "description": "SMTP server connectivity status",
+                "example": "healthy"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Health check timestamp",
+            "example": "2025-11-07T10:30:00Z"
+          }
+        }
+      }
+    }
+  }
+}
