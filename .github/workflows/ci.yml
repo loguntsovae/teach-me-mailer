@@ -56,7 +56,7 @@ jobs:
       continue-on-error: true
       
     - name: Upload bandit results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: bandit-report
@@ -123,7 +123,7 @@ jobs:
         fail_ci_if_error: false
         
     - name: Upload coverage artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       with:
         name: coverage-report
         path: htmlcov/
@@ -149,7 +149,7 @@ jobs:
       continue-on-error: true
       
     - name: Upload safety results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: safety-report
