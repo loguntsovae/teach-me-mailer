@@ -1,12 +1,10 @@
 from sqlalchemy import select
-import pytest
 
 from app.models.api_key import APIKey
 from app.models.daily_usage import DailyUsage
 from app.services.atomic_rate_limit import AtomicRateLimitService
 
 
-@pytest.mark.skip(reason="Flaky asyncpg InterfaceError: cannot perform operation: another operation is in progress. See https://sqlalche.me/e/20/rvf5. Stabilize DB/session handling before re-enabling.")
 class TestRateLimit:
     """Test atomic rate limiting functionality."""
 

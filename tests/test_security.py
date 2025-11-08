@@ -1,13 +1,6 @@
-import pytest
-
 from unittest.mock import patch
+
 from app.main import mask_sensitive_data
-
-@pytest.mark.skip(reason="Flaky asyncpg InterfaceError: cannot perform operation: another operation is in progress. See https://sqlalche.me/e/20/rvf5. Stabilize DB/session handling before re-enabling.")
-class TestSecurity:
-    """Test security configurations and protections."""
-
-    # ...existing code...
 
 
 class TestSecurity:
@@ -40,7 +33,6 @@ class TestSecurity:
         assert "X-API-Key header" in response.json()["detail"]
 
     @patch("app.services.mailer.MailerService.send_email")
-    @pytest.mark.skip(reason="DB schema not initialized: relation 'api_keys' does not exist. See https://sqlalche.me/e/20/f405. Stabilize migrations/fixtures before re-enabling.")
     async def test_request_size_limiting(self, mock_send_email, client, test_session):
         """Test request size limiting at 256KB."""
         # Setup mock
@@ -113,7 +105,7 @@ class TestSecurity:
             "nested": {"auth_token": "nested_secret", "public_info": "not_secret"},
         }
 
-        masked_event = mask_sensitive_data(None, "test", test_event)
+        masked_event = mask_sensitive_data(test_event)
 
         # Verify sensitive fields are masked
         assert masked_event["password"] == "***MASKED***"
@@ -140,7 +132,7 @@ class TestSecurity:
             "another_cred": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9",
         }
 
-        masked_event = mask_sensitive_data(None, "test", test_event)
+        masked_event = mask_sensitive_data(test_event)
 
         # Long credential-like strings should be partially masked
         assert masked_event["long_value"] == "sk_1***MASKED***3456"

@@ -180,9 +180,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     try:
-        return Settings(
-            # APP_SECRET_KEY="key" * 11,
-        )
+        return Settings()
     except Exception as e:
         print(f"❌ Configuration Error: {e}")
         print("💡 Check your environment variables and .env file")

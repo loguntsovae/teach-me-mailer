@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 
 import bcrypt
@@ -6,7 +5,6 @@ import bcrypt
 from app.models.api_key import APIKey
 
 
-@pytest.mark.skip(reason="Flaky asyncpg InterfaceError: cannot perform operation: another operation is in progress. See https://sqlalche.me/e/20/rvf5. Stabilize DB/session handling before re-enabling.")
 class TestSendEndpoint:
     """Test the send email endpoint with mocked SMTP."""
 

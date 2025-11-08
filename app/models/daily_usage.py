@@ -1,5 +1,9 @@
-from sqlalchemy import Column, Date, ForeignKey, Integer, UniqueConstraint
+import uuid
+from typing import Optional
+
+from sqlalchemy import Date, Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
@@ -7,10 +11,10 @@ from app.db.base import Base
 class DailyUsage(Base):
     __tablename__ = "daily_usage"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # Use Integer for SQLite compatibility
-    api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False, index=True)
-    day = Column(Date, nullable=False)
-    count = Column(Integer, default=0, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    api_key_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False, index=True)
+    day: Mapped[Date] = mapped_column(Date, nullable=False)
+    count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     __table_args__ = (UniqueConstraint("api_key_id", "day", name="uq_daily_usage_api_key_day"),)
 
