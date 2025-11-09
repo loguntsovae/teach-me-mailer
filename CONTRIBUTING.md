@@ -13,7 +13,7 @@ This project adheres to a code of conduct. By participating, you are expected to
 **⚠️ Important**: This repository follows a protected main branch strategy:
 
 - **`main` branch**: Protected, production-ready code only
-- **`develop` branch**: Default for development and feature integration  
+- **`develop` branch**: Default for development and feature integration
 - **Development Flow**: Push all changes to `develop` → open PR to `main` after successful pipeline
 
 ```bash
@@ -85,7 +85,7 @@ git push origin develop
 
 This project uses:
 - **Black** for code formatting
-- **isort** for import sorting  
+- **isort** for import sorting
 - **flake8** for linting
 - **mypy** for type checking
 
@@ -107,7 +107,7 @@ Run `make lint` to check code style and `make format` to auto-format.
 ## Development Workflow
 
 1. **Issues**: Use GitHub issues to track bugs and feature requests
-2. **Branches**: 
+2. **Branches**:
    - `main`: Production-ready code
    - `develop`: Integration branch for features
    - `feature/*`: Individual features

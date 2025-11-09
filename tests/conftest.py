@@ -1,14 +1,12 @@
 import asyncio
-import subprocess
 import os
+import subprocess
+
 import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from alembic.config import Config
-from alembic import command
 import pytest
 from httpx import AsyncClient
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
 
 from app.core.config import Settings
 from app.db.base import Base
@@ -16,7 +14,9 @@ from app.main import create_app
 
 # Test database URL (use PostgreSQL for testing)
 TEST_DATABASE_NAME = "devdb"
-TEST_DATABASE_URL = f"postgresql+asyncpg://postgres:postgres@localhost:5432/{TEST_DATABASE_NAME}"
+TEST_DATABASE_URL = (
+    f"postgresql+asyncpg://postgres:postgres@localhost:5432/{TEST_DATABASE_NAME}"
+)
 
 
 @pytest.fixture(scope="session")
@@ -33,7 +33,9 @@ def setup_db():
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
     # Connect to default postgres database
-    conn = psycopg2.connect("dbname=postgres user=postgres password=postgres host=localhost")
+    conn = psycopg2.connect(
+        "dbname=postgres user=postgres password=postgres host=localhost"
+    )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
     cur.execute(f"SELECT 1 FROM pg_database WHERE datname = '{TEST_DATABASE_NAME}'")
@@ -111,5 +113,7 @@ async def client(test_app):
     """Create test HTTP client."""
     from httpx import ASGITransport
 
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://testserver") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=test_app), base_url="http://testserver"
+    ) as ac:
         yield ac

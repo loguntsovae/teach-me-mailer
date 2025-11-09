@@ -12,11 +12,14 @@ logger = structlog.get_logger(__name__)
 class RateLimitService:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.requests: Dict[str, List[datetime]] = defaultdict(list)  # Ensure value type is List[datetime]
+        self.requests: Dict[str, List[datetime]] = defaultdict(
+            list
+        )  # Ensure value type is List[datetime]
 
         # Add runtime validation for dictionary structure
         if not all(
-            isinstance(k, str) and all(isinstance(v, datetime) for v in vals) for k, vals in self.requests.items()
+            isinstance(k, str) and all(isinstance(v, datetime) for v in vals)
+            for k, vals in self.requests.items()
         ):
             raise TypeError(
                 "Invalid dictionary structure for `self.requests`. Keys must be str and values must be List[datetime]."
@@ -58,7 +61,9 @@ class RateLimitService:
             if not isinstance(now, datetime):
                 logger.error("Invalid type for timestamp", value_type=type(now))
                 raise TypeError("Expected a datetime object for email record timestamp")
-            self.requests[api_key].append(now)  # Ensure only datetime objects are appended
+            self.requests[api_key].append(
+                now
+            )  # Ensure only datetime objects are appended
             logger.debug(
                 "Appending request timestamp",
                 api_key=api_key[:8] + "...",
@@ -76,7 +81,9 @@ class RateLimitService:
     async def _cleanup_old_requests(self, api_key: str, now: datetime) -> None:
         """Remove requests older than the rate window."""
         window_start = now - timedelta(days=self.settings.rate_window_days)
-        self.requests[api_key] = [req for req in self.requests[api_key] if req > window_start]
+        self.requests[api_key] = [
+            req for req in self.requests[api_key] if req > window_start
+        ]
 
     async def get_remaining_quota(self, api_key: str) -> Dict[str, Union[str, int]]:
         """Get remaining email quota for an API key."""
@@ -94,5 +101,7 @@ class RateLimitService:
             "used": used_emails,
             "limit": self.settings.default_daily_limit,
             "window_days": self.settings.rate_window_days,
-            "resets_at": (window_start + timedelta(days=self.settings.rate_window_days)).isoformat(),
+            "resets_at": (
+                window_start + timedelta(days=self.settings.rate_window_days)
+            ).isoformat(),
         }

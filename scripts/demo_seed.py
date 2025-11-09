@@ -39,7 +39,9 @@ async def create_demo_api_key():
     # Save to database
     async for session in get_async_session():
         # Check if demo key already exists
-        result = await session.execute(select(APIKey).where(APIKey.name == "Demo API Key"))
+        result = await session.execute(
+            select(APIKey).where(APIKey.name == "Demo API Key")
+        )
         existing_key = result.scalar_one_or_none()
 
         if existing_key:

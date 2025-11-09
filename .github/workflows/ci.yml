@@ -16,21 +16,21 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     name: Code Quality Checks
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-        
+
     - name: Cache uv dependencies
       uses: actions/cache@v4
       with:
@@ -38,26 +38,26 @@ jobs:
         key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
         restore-keys: |
           ${{ runner.os }}-uv-
-          
+
     - name: Install dependencies
       run: uv sync --group dev
-        
+
     - name: Code formatting check with Black
       run: uv run black --check --diff app/ tests/ scripts/
-      
-    - name: Import sorting check with isort  
+
+    - name: Import sorting check with isort
       run: uv run isort --check-only --diff app/ tests/ scripts/
-      
+
     - name: Linting with flake8
       run: uv run flake8 app/ tests/ scripts/
-      
+
     # - name: Type checking with mypy
     #   run: uv run mypy app/ --ignore-missing-imports
-      
+
     - name: Security scanning with bandit
       run: uv run bandit -r app/ -f json -o bandit-report.json
       continue-on-error: true
-      
+
     - name: Upload bandit results
       uses: actions/upload-artifact@v5
       if: always()
@@ -68,21 +68,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Test Suite
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-        
+
     - name: Cache uv dependencies
       uses: actions/cache@v4
       with:
@@ -90,10 +90,10 @@ jobs:
         key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
         restore-keys: |
           ${{ runner.os }}-uv-
-          
+
     - name: Install dependencies
       run: uv sync --group dev
-        
+
     - name: Apply migrations
       run: uv run alembic upgrade head
 
@@ -102,13 +102,13 @@ jobs:
         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
         SMTP_HOST: smtp.example.com
         SMTP_PORT: 587
-        SMTP_USER: test@example.com  
+        SMTP_USER: test@example.com
         SMTP_PASSWORD: test_password
         FROM_EMAIL: test@example.com
         SECRET_KEY: test_secret_key_for_ci_testing_32chars_long
       run: |
         uv run pytest --cov=app --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=35 -v
-        
+
     - name: Roll back schema
       run: uv run alembic downgrade base
 
@@ -119,7 +119,7 @@ jobs:
         files: ./coverage.xml
         flags: unittests
         fail_ci_if_error: true
-        
+
     - name: Upload coverage artifacts
       uses: actions/upload-artifact@v5
       with:
@@ -129,23 +129,23 @@ jobs:
   security:
     runs-on: ubuntu-latest
     name: Security Checks
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        
+
     - name: Install safety
       run: pip install safety
-      
+
     - name: Check dependencies for vulnerabilities
       run: safety check --json --output safety-report.json
       continue-on-error: true
-      
+
     - name: Upload safety results
       uses: actions/upload-artifact@v5
       if: always()
@@ -157,14 +157,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Docker Image
     needs: [lint, test, security]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      
+
     - name: Cache Docker layers
       uses: actions/cache@v4
       with:
@@ -172,7 +172,7 @@ jobs:
         key: ${{ runner.os }}-buildx-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-buildx-
-          
+
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
@@ -181,19 +181,19 @@ jobs:
         tags: teach-me-mailer:${{ github.sha }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-        
+
     - name: Move cache
       run: |
         rm -rf /tmp/.buildx-cache
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-        
+
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: teach-me-mailer:${{ github.sha }}
         format: sarif
         output: trivy-results.sarif
-        
+
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v4
       if: always()
@@ -204,7 +204,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Integration Tests
     needs: [build]
-    
+
     services:
       postgres:
         image: postgres:15
@@ -218,33 +218,33 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-          
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
-    - name: Set up Docker Buildx  
+
+    - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      
+
     - name: Build and start services
       run: |
         docker-compose -f docker-compose.yml up -d --build
-        
+
     - name: Wait for services to be ready
       run: |
         timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
-        
+
     - name: Run integration tests
       run: |
         # Test health endpoint
         curl -f http://localhost:8000/health
-        
+
         # Test metrics endpoint
         curl -f http://localhost:8000/metrics
-        
+
         # Test API documentation
         curl -f http://localhost:8000/docs
-        
+
     - name: Stop services
       if: always()
       run: docker-compose down
@@ -254,21 +254,21 @@ jobs:
     name: Deploy to Production
     needs: [lint, test, security, build, integration-test]
     if: github.event_name == 'release' && github.event.action == 'published'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
-      
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      
+
     - name: Login to Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -281,7 +281,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha
-          
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -291,7 +291,7 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        
+
     - name: Deploy to production
       env:
         DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
@@ -307,7 +307,7 @@ jobs:
     name: Slack Notification
     needs: [deploy]
     if: always()
-    
+
     steps:
     - name: Slack Notification
       uses: 8398a7/action-slack@v3

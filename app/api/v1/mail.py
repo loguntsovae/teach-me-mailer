@@ -43,7 +43,9 @@ async def send_mail(
             api_key_id=api_key.id, email_count=email_count
         )
     except Exception as e:
-        logger.error("Rate limit check failed", api_key_id=str(api_key.id), error=str(e))
+        logger.error(
+            "Rate limit check failed", api_key_id=str(api_key.id), error=str(e)
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Rate limit check failed",
@@ -78,7 +80,9 @@ async def send_mail(
 
     # Step 2: Create SendLog entry immediately with null message_id
     try:
-        log_id = await email_queue.create_send_log(api_key_id=api_key.id, recipient=str(request.to))
+        log_id = await email_queue.create_send_log(
+            api_key_id=api_key.id, recipient=str(request.to)
+        )
         await db.commit()  # Commit the send log creation
 
         logger.info(
@@ -89,7 +93,9 @@ async def send_mail(
         )
 
     except Exception as e:
-        logger.error("Failed to create send log", api_key_id=str(api_key.id), error=str(e))
+        logger.error(
+            "Failed to create send log", api_key_id=str(api_key.id), error=str(e)
+        )
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -108,7 +114,11 @@ async def send_mail(
     )
 
     # Calculate effective daily limit (API key may have no specific limit)
-    effective_limit: int = api_key.daily_limit if api_key.daily_limit is not None else settings.default_daily_limit
+    effective_limit: int = (
+        api_key.daily_limit
+        if api_key.daily_limit is not None
+        else settings.default_daily_limit
+    )
 
     # remaining is always an int for the response model
     remaining = effective_limit - (rate_check_result.current_count + email_count)

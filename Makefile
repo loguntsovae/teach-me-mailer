@@ -290,10 +290,10 @@ asyncio.run(test())"
 check-limits:
 	@echo "$(BLUE)📊 Checking rate limit status...$(RESET)"
 	docker-compose exec postgres psql -U postgres -d mailgateway -c "
-	SELECT k.name, k.daily_limit, 
+	SELECT k.name, k.daily_limit,
 	       COALESCE(u.count, 0) as used_today,
 	       (k.daily_limit - COALESCE(u.count, 0)) as remaining
-	FROM api_keys k 
+	FROM api_keys k
 	LEFT JOIN daily_usage u ON k.id = u.api_key_id AND u.date = CURRENT_DATE
 	WHERE k.is_active = true;
 	"

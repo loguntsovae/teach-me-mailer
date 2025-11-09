@@ -60,7 +60,7 @@ docs = [
 ]
 
 [tool.black]
-line-length = 119
+line-length = 88
 target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''

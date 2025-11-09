@@ -6,7 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False
+    )
 
     # Application
     app_name: str = Field(default="mail-gateway", alias="APP_NAME")
@@ -190,7 +192,7 @@ def get_settings() -> Settings:
         # mypy sees required named args on the generated Settings signature;
         # in runtime pydantic reads environment variables so calling with no
         # args is valid. Silence the false-positive here.
-        return Settings()  # type: ignore[call-arg]
+        return Settings()
     except Exception as e:
         print(f"❌ Configuration Error: {e}")
         print("💡 Check your environment variables and .env file")

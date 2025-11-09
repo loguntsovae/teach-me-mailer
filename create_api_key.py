@@ -47,7 +47,9 @@ async def create_test_api_key():
             print(f'   curl -X POST "http://localhost:8000/api/v1/send" \\')
             print(f'     -H "X-API-Key: {plain_api_key}" \\')
             print(f'     -H "Content-Type: application/json" \\')
-            print(f'     -d \'{{"to": ["test@example.com"], "subject": "Test", "body_text": "Hello!"}}\'')
+            print(
+                f'     -d \'{{"to": ["test@example.com"], "subject": "Test", "body_text": "Hello!"}}\''
+            )
             print(f"")
             print(f"📊 Check usage:")
             print(f'   curl -H "X-API-Key: {plain_api_key}" \\')

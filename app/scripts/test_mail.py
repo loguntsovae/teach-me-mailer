@@ -31,7 +31,10 @@ async def test_email_sending():
         print()
 
         # Check if Gmail App Password is set
-        if not settings.smtp_password or settings.smtp_password == "${GMAIL_APP_PASSWORD}":
+        if (
+            not settings.smtp_password
+            or settings.smtp_password == "${GMAIL_APP_PASSWORD}"
+        ):
             print("❌ SMTP_PASSWORD is not set correctly!")
             print("   Please set GMAIL_APP_PASSWORD environment variable")
             print("   or update the .env file with your Gmail App Password")
@@ -82,7 +85,9 @@ Mail Gateway Service
 </html>
 """
 
-        message_id = await mailer.send_email(to=[test_recipient], subject=subject, text=text_body, html=html_body)
+        message_id = await mailer.send_email(
+            to=[test_recipient], subject=subject, text=text_body, html=html_body
+        )
 
         if message_id:
             print("✅ Email sent successfully!")

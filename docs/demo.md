@@ -34,7 +34,7 @@ A comprehensive demo video is available showing:
 
 - **Service Startup**: Quick setup with Docker Compose
 - **API Testing**: Live demonstration of email sending
-- **Error Handling**: Robust validation and error responses  
+- **Error Handling**: Robust validation and error responses
 - **Monitoring**: Real-time metrics and logging
 - **Security**: API key authentication and rate limiting
 
@@ -44,7 +44,7 @@ A comprehensive demo video is available showing:
 
 ### Response Time Metrics
 - **P50**: < 50ms
-- **P95**: < 100ms  
+- **P95**: < 100ms
 - **P99**: < 200ms
 
 ### Throughput Capabilities
@@ -144,7 +144,7 @@ Run with:
 
 ### Monitoring Stack
 - ✅ **Prometheus** for metrics collection
-- ✅ **Grafana** for visualization  
+- ✅ **Grafana** for visualization
 - ✅ **Sentry** for error tracking
 - ✅ **ELK Stack** for log aggregation (optional)
 

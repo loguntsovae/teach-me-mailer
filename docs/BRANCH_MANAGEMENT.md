@@ -10,7 +10,7 @@ This document outlines the branch protection rules and development workflow for 
 - **Required Reviews**: ✅ At least 1 reviewer required
 - **Required Status Checks**: ✅ All CI checks must pass
   - Linting (`lint` job)
-  - Tests (`test` job) 
+  - Tests (`test` job)
   - Security checks (`security` job)
   - Build verification (`build` job)
 - **Dismiss Stale Reviews**: ✅ Enabled
@@ -56,7 +56,7 @@ gitgraph:
    git push origin develop
    ```
 
-2. **Create Pull Request** 
+2. **Create Pull Request**
    - Open PR: `develop` → `main`
    - Wait for CI checks to pass ✅
    - Request code review 👀
@@ -64,7 +64,7 @@ gitgraph:
 
 3. **Merge to Main**
    - CI checks pass ✅
-   - Code reviewed and approved ✅  
+   - Code reviewed and approved ✅
    - Squash and merge to main 🚀
 
 ### 🛡️ Safety Measures
@@ -80,7 +80,7 @@ gitgraph:
 - ✅ `develop` branch: Runs full CI pipeline
 - ❌ `main` branch: No push triggers (PR only)
 
-### Pull Request Events  
+### Pull Request Events
 - ✅ PRs targeting `main`: Full CI + additional checks
 - ✅ PRs targeting `develop`: Standard CI pipeline
 
@@ -115,7 +115,7 @@ git push origin develop
 ```bash
 # Run checks locally first:
 make lint     # Code quality
-make test     # Test suite  
+make test     # Test suite
 make format   # Auto-fix formatting
 ```
 
