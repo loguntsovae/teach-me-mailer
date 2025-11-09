@@ -6,16 +6,18 @@ services:
     container_name: teach-me-mailer-db
     environment:
       POSTGRES_DB: mailgateway
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: teachme
+      POSTGRES_PASSWORD: securepassword
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "15432:5432"
+    expose:
+      - "5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mailgateway"]
+      test: ["CMD-SHELL", "pg_isready -U teachme -d mailgateway"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,50 +37,41 @@ services:
       -c log_rotation_size=1GB
 
   app:
-    build: 
+    build:
       context: .
-      target: ${BUILD_TARGET:-development}
+      target: ${BUILD_TARGET:-production}
       args:
         - BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
-        - BUILD_VERSION=${BUILD_VERSION:-dev}
+        - BUILD_VERSION=${BUILD_VERSION:-prod}
     container_name: teach-me-mailer-app
     env_file:
       - .env
     environment:
-      # Override with Docker Compose specific settings
-      DATABASE_URL: "postgresql+asyncpg://postgres:password@postgres:5432/mailgateway"
-      DEBUG: "${DEBUG:-true}"
+      DATABASE_URL: "postgresql+asyncpg://teachme:securepassword@postgres:5432/mailgateway"
+      APP_PORT: "${APP_PORT:-8088}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       LOG_JSON: "${LOG_JSON:-true}"
-      
-      # Health check settings
       HEALTH_CHECK_TIMEOUT: "10"
-      
-      # Worker settings for production
-      WORKERS: "${WORKERS:-1}"
-      
+      WORKERS: "${WORKERS:-2}"
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${PUBLISH_APP_PORT:-8088}:8088"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      # Mount source code for development
       - .:/app:delegated
-      # Cache pip packages
       - pip_cache:/root/.cache/pip
-      # Persistent logs
       - app_logs:/app/logs
     networks:
       - mailgateway
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8088/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     restart: unless-stopped
-    # Resource limits for development
+    entrypoint: ["/bin/sh", "/docker/entrypoint.sh"]
     deploy:
       resources:
         limits:
@@ -109,25 +102,6 @@ services:
       - full
       - redis
 
-  # Nginx reverse proxy for production-like setup
-  nginx:
-    image: nginx:alpine
-    container_name: teach-me-mailer-nginx
-    ports:
-      - "${NGINX_PORT:-80}:80"
-      - "${NGINX_SSL_PORT:-443}:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/ssl:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - app
-    networks:
-      - mailgateway
-    restart: unless-stopped
-    profiles:
-      - production
-      - full
 
   # Prometheus for metrics collection
   prometheus:
@@ -185,8 +159,6 @@ volumes:
     driver: local
   app_logs:
     driver: local
-  nginx_logs:
-    driver: local
 
 networks:
   mailgateway:
@@ -199,5 +171,5 @@ networks:
 # docker-compose up                          # Basic development (app + postgres)
 # docker-compose --profile redis up          # With Redis caching
 # docker-compose --profile monitoring up     # With Prometheus + Grafana
-# docker-compose --profile production up     # With Nginx reverse proxy
+# docker-compose --profile production up     # Production
 # docker-compose --profile full up           # Everything

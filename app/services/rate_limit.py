@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, List, Union
 
 import structlog
 
@@ -12,7 +12,18 @@ logger = structlog.get_logger(__name__)
 class RateLimitService:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.requests: Dict[str, list] = defaultdict(list)
+        self.requests: Dict[str, List[datetime]] = defaultdict(list)  # Ensure value type is List[datetime]
+
+        # Add runtime validation for dictionary structure
+        if not all(
+            isinstance(k, str) and all(isinstance(v, datetime) for v in vals) for k, vals in self.requests.items()
+        ):
+            raise TypeError(
+                "Invalid dictionary structure for `self.requests`. "
+                "Keys must be str and values must be List[datetime]."
+            )
+
+        logger.debug("Initializing requests dictionary", structure=self.requests)
 
     async def check_daily_limit(self, api_key: str, email_count: int = 1) -> bool:
         """Check if API key is within daily email limits."""
@@ -45,7 +56,16 @@ class RateLimitService:
 
         # Add one entry per email sent
         for _ in range(email_count):
-            self.requests[api_key].append(now)
+            if not isinstance(now, datetime):
+                logger.error("Invalid type for timestamp", value_type=type(now))
+                raise TypeError("Expected a datetime object for email record timestamp")
+            self.requests[api_key].append(now)  # Ensure only datetime objects are appended
+            logger.debug(
+                "Appending request timestamp",
+                api_key=api_key[:8] + "...",
+                timestamp=now.isoformat(),
+                value_type=type(now),
+            )
 
         logger.debug(
             "Emails recorded for rate limiting",
@@ -57,11 +77,9 @@ class RateLimitService:
     async def _cleanup_old_requests(self, api_key: str, now: datetime) -> None:
         """Remove requests older than the rate window."""
         window_start = now - timedelta(days=self.settings.rate_window_days)
-        self.requests[api_key] = [
-            req for req in self.requests[api_key] if req > window_start
-        ]
+        self.requests[api_key] = [req for req in self.requests[api_key] if req > window_start]
 
-    async def get_remaining_quota(self, api_key: str) -> Dict[str, int]:
+    async def get_remaining_quota(self, api_key: str) -> Dict[str, Union[str, int]]:
         """Get remaining email quota for an API key."""
         now = datetime.utcnow()
         await self._cleanup_old_requests(api_key, now)
@@ -77,7 +95,5 @@ class RateLimitService:
             "used": used_emails,
             "limit": self.settings.default_daily_limit,
             "window_days": self.settings.rate_window_days,
-            "resets_at": (
-                window_start + timedelta(days=self.settings.rate_window_days)
-            ).isoformat(),
+            "resets_at": (window_start + timedelta(days=self.settings.rate_window_days)).isoformat(),
         }

@@ -32,7 +32,7 @@ async def get_current_api_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> APIKey:
-    """Dependency to validate API key via X-API-Key header and return the APIKey object."""
+    """Dependency to validate API key via header and return the APIKey object."""
     if not x_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

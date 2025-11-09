@@ -307,7 +307,7 @@
                 "example": "healthy"
               },
               "smtp": {
-                "type": "string", 
+                "type": "string",
                 "description": "SMTP server connectivity status",
                 "example": "healthy"
               }

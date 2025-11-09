@@ -9,13 +9,13 @@ import sys
 from datetime import datetime
 
 import bcrypt
+from sqlalchemy import select
+
+from app.db.session import get_async_session
+from app.models.api_key import APIKey
 
 # Add the app directory to Python path
 sys.path.insert(0, ".")
-
-from app.core.config import get_settings
-from app.db.session import get_async_session
-from app.models.api_key import APIKey
 
 
 async def create_demo_api_key():
@@ -39,15 +39,11 @@ async def create_demo_api_key():
     # Save to database
     async for session in get_async_session():
         # Check if demo key already exists
-        from sqlalchemy import select
-
-        result = await session.execute(
-            select(APIKey).where(APIKey.name == "Demo API Key")
-        )
+        result = await session.execute(select(APIKey).where(APIKey.name == "Demo API Key"))
         existing_key = result.scalar_one_or_none()
 
         if existing_key:
-            print("🔑 Demo API key already exists")
+            print("Demo API key already exists")
             return demo_key, str(existing_key.id)
 
         session.add(api_key)
@@ -68,26 +64,28 @@ async def main():
         print()
         print("📋 Demo Credentials:")
         print("=" * 30)
-        print(f"API Key: {demo_key}")
-        print(f"Key ID:  {key_id}")
-        print(f"Limit:   100 emails/day")
+        print("API Key: " + demo_key)
+        print("Key ID:  " + key_id)
+        print("Limit:   100 emails/day")
         print()
         print("🧪 Test with curl:")
         print(
-            f"""curl -X POST "http://localhost:8000/api/v1/send" \\
-  -H "X-API-Key: {demo_key}" \\
-  -H "Content-Type: application/json" \\
-  -d '{{
-    "to": "test@example.com",
-    "subject": "Hello from Teach Me Mailer! 👋",
-    "html_body": "<h1>Welcome!</h1><p>Your email service is working perfectly.</p>",
-    "text_body": "Welcome! Your email service is working perfectly."
-  }}'"""
+            "curl -X POST 'http://localhost:8000/api/v1/send' \\\n"
+            "  -H 'X-API-Key: " + demo_key + "' \\\n"
+            "  -H 'Content-Type: application/json' \\\n"
+            "  -d '{\n"
+            '    "to": "test@example.com",\n'
+            '    "subject": "Hello from Teach Me Mailer! 👋",\n'
+            '    "html_body": "<h1>Welcome!</h1><p>Your email service is '
+            'working perfectly.</p>",\n'
+            '    "text_body": "Welcome! Your email service is working '
+            'perfectly."\n'
+            "  }'"
         )
         print()
 
     except Exception as e:
-        print(f"❌ Failed to create demo API key: {e}")
+        print("❌ Failed to create demo API key: " + str(e))
         sys.exit(1)
 
 

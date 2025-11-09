@@ -27,9 +27,7 @@ class AtomicRateLimitService:
         self.db = db
         self.settings = settings
 
-    async def check_and_increment_rate_limit(
-        self, api_key_id: uuid.UUID, email_count: int = 1
-    ) -> RateLimitResult:
+    async def check_and_increment_rate_limit(self, api_key_id: uuid.UUID, email_count: int = 1) -> RateLimitResult:
         """
         Atomically check and increment daily usage count.
 
@@ -116,9 +114,7 @@ class AtomicRateLimitService:
             )
             await self.db.flush()
             await self.db.commit()  # Commit so subsequent operations can see this data
-            return RateLimitResult(
-                allowed=True, current_count=new_count, retry_after_seconds=None
-            )
+            return RateLimitResult(allowed=True, current_count=new_count, retry_after_seconds=None)
 
         except Exception as e:
             logger.error(
@@ -192,9 +188,7 @@ class AtomicRateLimitService:
 
             # Get total emails sent (all time)
             total_sent_result = await self.db.execute(
-                select(text("COUNT(*)"))
-                .select_from(SendLog)
-                .where(SendLog.api_key_id == api_key_id)
+                select(text("COUNT(*)")).select_from(SendLog).where(SendLog.api_key_id == api_key_id)
             )
             total_sent = total_sent_result.scalar() or 0
 
@@ -228,17 +222,11 @@ class AtomicRateLimitService:
     async def _get_effective_daily_limit(self, api_key_id: uuid.UUID) -> int:
         """Get the effective daily limit for an API key."""
         try:
-            result = await self.db.execute(
-                select(APIKey.daily_limit).where(APIKey.id == api_key_id)
-            )
+            result = await self.db.execute(select(APIKey.daily_limit).where(APIKey.id == api_key_id))
             daily_limit = result.scalar_one_or_none()
 
             # Use API key specific limit or default from settings
-            return (
-                daily_limit
-                if daily_limit is not None
-                else self.settings.default_daily_limit
-            )
+            return daily_limit if daily_limit is not None else self.settings.default_daily_limit
 
         except Exception as e:
             logger.error(
@@ -252,9 +240,7 @@ class AtomicRateLimitService:
         """Get current usage count for a specific day."""
         try:
             result = await self.db.execute(
-                select(DailyUsage.count).where(
-                    DailyUsage.api_key_id == api_key_id, DailyUsage.day == day
-                )
+                select(DailyUsage.count).where(DailyUsage.api_key_id == api_key_id, DailyUsage.day == day)
             )
             count = result.scalar_one_or_none()
             return count if count is not None else 0

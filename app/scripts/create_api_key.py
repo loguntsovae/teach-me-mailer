@@ -56,10 +56,9 @@ def hash_api_key(api_key: str) -> str:
     Returns:
         The bcrypt hash of the API key
     """
-    # Use a reasonable cost factor for production (12 provides good security/performance balance)
-    return bcrypt.hashpw(api_key.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode(
-        "utf-8"
-    )
+    # Use a reasonable cost factor for production (12 provides good
+    # security/performance balance)
+    return bcrypt.hashpw(api_key.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 async def check_name_exists(session: AsyncSession, name: str) -> bool:
@@ -76,9 +75,7 @@ async def check_name_exists(session: AsyncSession, name: str) -> bool:
     return result.scalar_one_or_none() is not None
 
 
-async def create_api_key_record(
-    session: AsyncSession, name: str, key_hash: str, daily_limit: int
-) -> APIKey:
+async def create_api_key_record(session: AsyncSession, name: str, key_hash: str, daily_limit: int) -> APIKey:
     """Create and save an API key record to the database.
 
     Args:
@@ -90,9 +87,7 @@ async def create_api_key_record(
     Returns:
         The created APIKey object
     """
-    api_key = APIKey(
-        name=name, key_hash=key_hash, daily_limit=daily_limit, is_active=True
-    )
+    api_key = APIKey(name=name, key_hash=key_hash, daily_limit=daily_limit, is_active=True)
 
     session.add(api_key)
     await session.commit()
@@ -137,9 +132,7 @@ Make sure to save it securely.
         help="Total length of the generated API key (default: %(default)s)",
     )
 
-    parser.add_argument(
-        "--prefix", default="sk_", help="Prefix for the API key (default: %(default)s)"
-    )
+    parser.add_argument("--prefix", default="sk_", help="Prefix for the API key (default: %(default)s)")
 
     args = parser.parse_args()
 
@@ -190,20 +183,18 @@ Make sure to save it securely.
             print(f"Name: {args.name}")
             print(f"ID: {api_key_record.id}")
             print(f"Daily Limit: {args.limit} emails")
-            print(f"Status: Active")
+            print("Status: Active")
             print(f"Created: {api_key_record.created_at}")
-            print("\n" + "🔑 API KEY (save this immediately):")
+            print("\n🔑 API KEY (save this immediately):")
             print("-" * 60)
-            print(f"{api_key}")
+            print(api_key)
             print("-" * 60)
             print("\n⚠️  IMPORTANT: This API key will not be shown again!")
             print("   Save it securely and use it in your X-API-Key header.")
             print("\n📖 Usage example:")
             print(f'   curl -H "X-API-Key: {api_key}" \\')
             print('        -H "Content-Type: application/json" \\')
-            print(
-                '        -d \'{"to": "user@example.com", "subject": "Test", "text_body": "Hello!"}\' \\'
-            )
+            print('        -d \'{"to": "user@example.com", "subject": "Test", ' '"text_body": "Hello!"}\' \\')
             print("        http://localhost:8000/api/v1/send")
             print()
 

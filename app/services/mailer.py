@@ -1,7 +1,7 @@
 import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import aiosmtplib
 import structlog
@@ -57,7 +57,7 @@ class MailerService:
         # Create message
         if html and text:
             # Multipart message with both HTML and text
-            msg = MIMEMultipart("alternative")
+            msg: Union[MIMEMultipart, MIMEText] = MIMEMultipart("alternative")
             msg["Subject"] = subject
             msg["From"] = from_addr
             msg["To"] = ", ".join(to)
@@ -75,7 +75,8 @@ class MailerService:
 
         else:
             # Simple message with single content type
-            content = html or text
+            # Ensure content is a non-None string for MIMEText
+            content: str = html if html is not None else (text if text is not None else "")
             content_type = "html" if html else "plain"
 
             msg = MIMEText(content, content_type, "utf-8")
@@ -112,9 +113,7 @@ class MailerService:
             )
 
             # Extract message ID from SMTP response
-            message_id = (
-                self._extract_message_id(result) or f"msg_{uuid.uuid4().hex[:12]}"
-            )
+            message_id = self._extract_message_id(result) or f"msg_{uuid.uuid4().hex[:12]}"
 
             logger.info(
                 "Email sent successfully",

@@ -26,9 +26,9 @@ make_request() {
     local method="$1"
     local endpoint="$2"
     local data="$3"
-    
+
     echo -e "${BLUE}➤ $method $endpoint${NC}"
-    
+
     if [ "$method" = "POST" ] && [ -n "$data" ]; then
         response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
             -X POST \
@@ -39,10 +39,10 @@ make_request() {
     else
         response=$(curl -s -w "HTTPSTATUS:%{http_code}" "$API_BASE_URL$endpoint")
     fi
-    
+
     http_code=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
     body=$(echo "$response" | sed -e 's/HTTPSTATUS\:.*//g')
-    
+
     if [ "$http_code" -eq 200 ] || [ "$http_code" -eq 202 ]; then
         echo -e "${GREEN}✅ Success ($http_code)${NC}"
         echo "$body" | jq '.' 2>/dev/null || echo "$body"
@@ -79,7 +79,7 @@ demo_docs() {
     echo -e "${BLUE}➤ GET /docs${NC}"
     echo -e "${GREEN}✅ Interactive API docs available at: ${API_BASE_URL}/docs${NC}"
     echo ""
-    
+
     echo -e "${BLUE}➤ GET /redoc${NC}"
     echo -e "${GREEN}✅ ReDoc documentation available at: ${API_BASE_URL}/redoc${NC}"
     echo ""
@@ -88,21 +88,21 @@ demo_docs() {
 # Demo step 3: Send a basic email
 demo_basic_email() {
     echo -e "${YELLOW}📧 Step 3: Send Basic Email${NC}"
-    
+
     local email_data='{
         "to": "'$DEMO_EMAIL'",
         "subject": "Welcome to Teach Me Mailer! 🚀",
         "html_body": "<h1>Hello!</h1><p>This is a <strong>test email</strong> from the Teach Me Mailer service.</p><p>Features demonstrated:</p><ul><li>✅ HTML email support</li><li>✅ API key authentication</li><li>✅ Rate limiting</li><li>✅ Structured logging</li></ul>",
         "text_body": "Hello!\n\nThis is a test email from the Teach Me Mailer service.\n\nFeatures demonstrated:\n- HTML email support\n- API key authentication\n- Rate limiting\n- Structured logging"
     }'
-    
+
     make_request "POST" "/api/v1/send" "$email_data"
 }
 
 # Demo step 4: Send email with custom headers
 demo_custom_headers() {
     echo -e "${YELLOW}📧 Step 4: Email with Custom Headers${NC}"
-    
+
     local email_data='{
         "to": "'$DEMO_EMAIL'",
         "subject": "Custom Headers Demo",
@@ -114,7 +114,7 @@ demo_custom_headers() {
             "X-Mailer": "Teach-Me-Mailer/1.0"
         }
     }'
-    
+
     make_request "POST" "/api/v1/send" "$email_data"
 }
 
@@ -123,7 +123,7 @@ demo_rate_limiting() {
     echo -e "${YELLOW}⚡ Step 5: Rate Limiting Demo${NC}"
     echo "Sending multiple emails quickly to demonstrate rate limiting..."
     echo ""
-    
+
     for i in {1..3}; do
         echo -e "${BLUE}Email $i/3${NC}"
         local email_data='{
@@ -131,7 +131,7 @@ demo_rate_limiting() {
             "subject": "Rate Limit Test #'$i'",
             "text_body": "This is rate limit test email number '$i'."
         }'
-        
+
         make_request "POST" "/api/v1/send" "$email_data" || true
         sleep 1
     done
@@ -141,9 +141,9 @@ demo_rate_limiting() {
 demo_metrics() {
     echo -e "${YELLOW}📊 Step 6: Prometheus Metrics${NC}"
     echo -e "${BLUE}➤ GET /metrics${NC}"
-    
+
     metrics=$(curl -s "$API_BASE_URL/metrics")
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Metrics retrieved successfully${NC}"
         echo ""
@@ -160,7 +160,7 @@ demo_metrics() {
 # Demo step 7: Error handling
 demo_error_handling() {
     echo -e "${YELLOW}❌ Step 7: Error Handling Demo${NC}"
-    
+
     # Invalid email format
     echo "Testing invalid email format:"
     local invalid_email_data='{
@@ -168,17 +168,17 @@ demo_error_handling() {
         "subject": "Test",
         "text_body": "This should fail validation."
     }'
-    
+
     make_request "POST" "/api/v1/send" "$invalid_email_data" || true
-    
+
     # Missing required fields
     echo "Testing missing required fields:"
     local incomplete_data='{
         "subject": "Missing recipient"
     }'
-    
+
     make_request "POST" "/api/v1/send" "$incomplete_data" || true
-    
+
     # Invalid API key
     echo "Testing invalid API key:"
     DEMO_API_KEY="invalid_key"
@@ -187,9 +187,9 @@ demo_error_handling() {
         "subject": "Test",
         "text_body": "This should fail authentication."
     }'
-    
+
     make_request "POST" "/api/v1/send" "$test_data" || true
-    
+
     # Restore valid API key
     DEMO_API_KEY="sk_test_demo_key_12345"
 }
@@ -205,10 +205,10 @@ main_demo() {
     echo "• 📊 Metrics and observability"
     echo "• ❌ Robust error handling"
     echo ""
-    
+
     read -p "Press Enter to start the demo..." -n 1 -r
     echo ""
-    
+
     check_service
     demo_health
     demo_docs
@@ -217,7 +217,7 @@ main_demo() {
     demo_rate_limiting
     demo_metrics
     demo_error_handling
-    
+
     echo -e "${GREEN}🎉 Demo completed successfully!${NC}"
     echo ""
     echo -e "${YELLOW}📋 Summary:${NC}"

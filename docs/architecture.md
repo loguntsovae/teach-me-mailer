@@ -18,26 +18,26 @@ graph TB
     DB[(PostgreSQL)]
     SMTP[SMTP Server]
     Monitor[Monitoring Stack]
-    
+
     Client --> LB
     LB --> API
     API --> DB
     API --> SMTP
     API --> Monitor
-    
+
     subgraph "Application Layer"
         API --> Auth[Authentication Service]
         API --> RateLimit[Rate Limiting Service]
         API --> EmailService[Email Service]
         API --> Logger[Logging Service]
     end
-    
+
     subgraph "Data Layer"
         DB --> APIKeys[API Keys Table]
         DB --> Usage[Daily Usage Table]
         DB --> Logs[Send Logs Table]
     end
-    
+
     subgraph "External Services"
         SMTP
         Monitor --> Prometheus[Prometheus]
@@ -57,38 +57,38 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant SMTP as SMTP Server
     participant Mon as Monitoring
-    
+
     Note over C,Mon: Email Send Request Flow
-    
+
     C->>API: POST /api/v1/send + X-API-Key
     API->>API: Parse request & validate schema
-    
+
     API->>Auth: Authenticate API key
     Auth->>DB: Query api_keys table
     DB-->>Auth: Return key details
     Auth-->>API: Authentication result
-    
+
     alt Authentication failed
         API-->>C: 401 Unauthorized
     else Authentication successful
         API->>RL: Check rate limit
         RL->>DB: Atomic upsert daily_usage
         DB-->>RL: Current usage count
-        
+
         alt Rate limit exceeded
             RL-->>API: Rate limit exceeded
             API->>Mon: Log rate limit hit
             API-->>C: 429 Too Many Requests
         else Within limits
             RL-->>API: Request allowed
-            
+
             API->>ES: Queue email for sending
             ES->>SMTP: Send email via STARTTLS
             SMTP-->>ES: Send result
-            
+
             ES->>DB: Log send attempt
             ES->>Mon: Update metrics
-            
+
             API-->>C: 202 Email Queued
         end
     end
@@ -104,11 +104,11 @@ graph LR
         Router[API Router]
         Middleware[Middleware Stack]
         Deps[Dependencies]
-        
+
         Router --> Auth[Auth Dependency]
         Router --> RateLimit[Rate Limit Check]
         Router --> Validation[Request Validation]
-        
+
         Middleware --> CORS[CORS Middleware]
         Middleware --> Logging[Request Logging]
         Middleware --> Metrics[Metrics Collection]
@@ -132,10 +132,10 @@ graph TD
     Hash --> DB[(Database Query)]
     DB --> Verify[Verify with bcrypt]
     Verify --> Result{Valid Key?}
-    
+
     Result -->|Yes| Allow[Allow Request]
     Result -->|No| Deny[Return 401]
-    
+
     Allow --> Context[Set Auth Context]
 ```
 
@@ -152,14 +152,14 @@ graph TD
     Check[Rate Limit Check] --> Query[Query Current Usage]
     Query --> DB[(PostgreSQL)]
     DB --> Atomic[Atomic Upsert]
-    
+
     Atomic --> Count{Check Count}
     Count -->|Under Limit| Allow[Allow + Increment]
     Count -->|Over Limit| Deny[Deny Request]
-    
+
     Allow --> Update[Update Usage Count]
     Deny --> Log[Log Rate Limit Hit]
-    
+
     subgraph "Database Operations"
         Atomic --> Insert[INSERT ON CONFLICT]
         Insert --> DoUpdate[DO UPDATE SET]
@@ -181,18 +181,18 @@ graph TB
     Validate --> Domain[Domain Check]
     Domain --> Template[Process Template]
     Template --> SMTP[SMTP Connection]
-    
+
     SMTP --> TLS[STARTTLS Negotiation]
     TLS --> Auth[SMTP Authentication]
     Auth --> Send[Send Email]
-    
+
     Send --> Success{Success?}
     Success -->|Yes| LogSuccess[Log Success]
     Success -->|No| LogError[Log Error]
-    
+
     LogSuccess --> DB[(Database)]
     LogError --> DB
-    
+
     subgraph "Email Processing"
         Template --> HTMLRender[HTML Rendering]
         Template --> TextFallback[Text Fallback]
@@ -216,7 +216,7 @@ graph TB
 erDiagram
     API_KEYS ||--o{ DAILY_USAGE : "tracks usage"
     API_KEYS ||--o{ SEND_LOGS : "logs sends"
-    
+
     API_KEYS {
         uuid id PK
         string name
@@ -226,7 +226,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     DAILY_USAGE {
         uuid id PK
         uuid api_key_id FK
@@ -235,7 +235,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     SEND_LOGS {
         uuid id PK
         uuid api_key_id FK
@@ -264,7 +264,7 @@ graph TD
     WAF --> LB[Load Balancer]
     LB --> TLS[TLS Termination]
     TLS --> API[FastAPI Application]
-    
+
     subgraph "Application Security"
         API --> CORS[CORS Protection]
         CORS --> RateLimit[Rate Limiting]
@@ -272,13 +272,13 @@ graph TD
         Auth --> Validation[Input Validation]
         Validation --> Sanitization[Data Sanitization]
     end
-    
+
     subgraph "Data Security"
         Sanitization --> Encryption[Data Encryption]
         Encryption --> Hashing[Password Hashing]
         Hashing --> DB[(Encrypted Storage)]
     end
-    
+
     subgraph "Monitoring Security"
         DB --> Audit[Audit Logging]
         Audit --> SIEM[SIEM Integration]
@@ -304,22 +304,22 @@ graph TB
     App --> Logs[Structured Logging]
     App --> Traces[Distributed Tracing]
     App --> Errors[Error Tracking]
-    
+
     Metrics --> Prometheus[Prometheus Server]
     Logs --> Aggregator[Log Aggregator]
     Traces --> Jaeger[Jaeger]
     Errors --> Sentry[Sentry]
-    
+
     Prometheus --> Grafana[Grafana Dashboards]
     Aggregator --> ElasticSearch[ElasticSearch]
     ElasticSearch --> Kibana[Kibana]
-    
+
     subgraph "Alerting"
         Grafana --> AlertManager[Alert Manager]
         Sentry --> Notifications[Error Notifications]
         AlertManager --> PagerDuty[PagerDuty]
     end
-    
+
     subgraph "Business Metrics"
         Metrics --> EmailRate[Email Send Rate]
         Metrics --> ErrorRate[Error Rate]
@@ -359,7 +359,7 @@ graph TB
         DevBuild --> DevTest[Run Tests]
         DevTest --> DevDeploy[Local Deploy]
     end
-    
+
     subgraph "CI/CD Pipeline"
         DevDeploy --> CI[GitHub Actions]
         CI --> TestSuite[Full Test Suite]
@@ -367,7 +367,7 @@ graph TB
         SecurityScan --> BuildProd[Production Build]
         BuildProd --> Registry[Container Registry]
     end
-    
+
     subgraph "Production"
         Registry --> Deploy[Deployment]
         Deploy --> Health[Health Checks]

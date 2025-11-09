@@ -28,24 +28,16 @@ class UsageTrackingService:
             daily_limit = result.scalar_one_or_none()
 
             # Use API key specific limit or default from settings
-            return (
-                daily_limit
-                if daily_limit is not None
-                else self.settings.default_daily_limit
-            )
+            return daily_limit if daily_limit is not None else self.settings.default_daily_limit
 
         except Exception as e:
-            logger.error(
-                "Error getting daily limit", api_key_id=str(api_key_id), error=str(e)
-            )
+            logger.error("Error getting daily limit", api_key_id=str(api_key_id), error=str(e))
             return self.settings.default_daily_limit
 
     async def get_usage_for_day(self, api_key_id: uuid.UUID, day: date) -> int:
         """Get email count for a specific day."""
         try:
-            stmt = select(DailyUsage.count).where(
-                DailyUsage.api_key_id == api_key_id, DailyUsage.day == day
-            )
+            stmt = select(DailyUsage.count).where(DailyUsage.api_key_id == api_key_id, DailyUsage.day == day)
             result = await self.db.execute(stmt)
             count = result.scalar_one_or_none()
             return count if count is not None else 0
@@ -59,9 +51,7 @@ class UsageTrackingService:
             )
             return 0
 
-    async def check_daily_limit(
-        self, api_key_id: uuid.UUID, email_count: int = 1
-    ) -> bool:
+    async def check_daily_limit(self, api_key_id: uuid.UUID, email_count: int = 1) -> bool:
         """Check if sending emails would exceed daily limit."""
         today = date.today()
         current_usage = await self.get_usage_for_day(api_key_id, today)
@@ -103,9 +93,7 @@ class UsageTrackingService:
                 self.db.add(send_log)
 
             # Update daily usage using upsert
-            stmt = insert(DailyUsage).values(
-                api_key_id=api_key_id, day=today, count=email_count
-            )
+            stmt = insert(DailyUsage).values(api_key_id=api_key_id, day=today, count=email_count)
             stmt = stmt.on_conflict_do_update(
                 constraint="uq_daily_usage_api_key_day",
                 set_=dict(count=DailyUsage.count + stmt.excluded.count),
@@ -140,9 +128,7 @@ class UsageTrackingService:
             daily_limit = await self.get_daily_limit(api_key_id)
 
             # Get total emails sent
-            stmt = select(func.count(SendLog.id)).where(
-                SendLog.api_key_id == api_key_id
-            )
+            stmt = select(func.count(SendLog.id)).where(SendLog.api_key_id == api_key_id)
             result = await self.db.execute(stmt)
             total_sent = result.scalar() or 0
 
@@ -156,9 +142,7 @@ class UsageTrackingService:
             }
 
         except Exception as e:
-            logger.error(
-                "Error getting usage summary", api_key_id=str(api_key_id), error=str(e)
-            )
+            logger.error("Error getting usage summary", api_key_id=str(api_key_id), error=str(e))
             return {
                 "api_key_id": str(api_key_id),
                 "daily_limit": self.settings.default_daily_limit,

@@ -24,6 +24,6 @@ scrape_configs:
   # PostgreSQL metrics (if using postgres_exporter)
   - job_name: 'postgres'
     static_configs:
-      - targets: ['postgres:5432']
+    - targets: ['postgres:5432']
     metrics_path: '/metrics'
     scrape_interval: 15s

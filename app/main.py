@@ -12,20 +12,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.api.v1 import routes
+from app.api.v1 import router as v1routes
 from app.core.config import get_settings
 
-# Initialize Sentry SDK
-sentry_sdk.init(
-    dsn="https://fccb9ee60a71cb42db499c0546e83160@o4510323039535104.ingest.de.sentry.io/4510323045892176",
-    integrations=[FastApiIntegration()],
-    traces_sample_rate=1.0,
-    environment="dev",
-)
+# Initialize Sentry SDK from settings (only if DSN provided)
+settings_for_sentry = get_settings()
+if getattr(settings_for_sentry, "sentry_dsn", None):
+    sentry_sdk.init(
+        dsn=settings_for_sentry.sentry_dsn,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=1.0,
+        environment="dev",
+    )
+    # Log that Sentry was initialized (do not log the DSN itself)
+    structlog.get_logger(__name__).info("Sentry initialized", sentry_initialized=True)
 
 
 # Configure structured logging
-def mask_sensitive_data(event_dict):
+def mask_sensitive_data(logger, method_name, event_dict):
     """Mask sensitive data in log events."""
     SENSITIVE_KEYS = {
         "password",
@@ -38,7 +42,7 @@ def mask_sensitive_data(event_dict):
         "smtp_user",
         "api_key",
         "x_api_key",
-        "secret_key",
+        "app_secret_key",
         "database_url",
     }
 
@@ -53,12 +57,8 @@ def mask_sensitive_data(event_dict):
                     masked[key] = mask_dict(value, f"{path}.{key}" if path else key)
             return masked
         elif isinstance(data, str):
-            # Mask values that look like credentials (long strings with mixed case/numbers)
-            if (
-                len(data) > 20
-                and any(c.isdigit() for c in data)
-                and any(c.isupper() for c in data)
-            ):
+            # Mask values that look like credentials
+            if len(data) > 20 and any(c.isdigit() for c in data) and any(c.isupper() for c in data):
                 return f"{data[:4]}***MASKED***{data[-4:]}"
             return data
         elif isinstance(data, list):
@@ -170,9 +170,11 @@ def create_app() -> FastAPI:
         if request.headers.get("content-length"):
             content_length = int(request.headers["content-length"])
             if content_length > max_size:
+                msg = f"Request entity too large. Maximum size is {max_size // 1024}KB."
+                content = f"{{'detail': '{msg}'}}"
                 return Response(
                     status_code=413,
-                    content=f'{{"detail": "Request entity too large. Maximum size is {max_size // 1024}KB."}}',
+                    content=content,
                     media_type="application/json",
                 )
 
@@ -219,14 +221,14 @@ def create_app() -> FastAPI:
 
     # Include API routes
     app.include_router(
-        routes.router,
+        v1routes,
         prefix="/api/v1",
         tags=["mail"],
     )
 
     # Add health endpoint at root level
     app.include_router(
-        routes.router,
+        v1routes,
         prefix="",
         tags=["health"],
         include_in_schema=False,
@@ -251,16 +253,3 @@ async def root():
         "docs": "/docs" if settings.debug else "disabled",
         "health": "/health",
     }
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    settings = get_settings()
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.debug,
-        log_level=settings.log_level.lower(),
-    )

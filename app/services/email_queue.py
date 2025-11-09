@@ -40,20 +40,14 @@ class EmailQueueService:
 
         return send_log.id
 
-    async def update_send_log_message_id(
-        self, log_id: int, message_id: Optional[str]
-    ) -> None:
+    async def update_send_log_message_id(self, log_id: int, message_id: Optional[str]) -> None:
         """Update the message_id in an existing SendLog entry using a new session."""
         from app.db.session import AsyncSessionLocal
 
         try:
             # Create a new session for the background update
             async with AsyncSessionLocal() as db_session:
-                await db_session.execute(
-                    update(SendLog)
-                    .where(SendLog.id == log_id)
-                    .values(message_id=message_id)
-                )
+                await db_session.execute(update(SendLog).where(SendLog.id == log_id).values(message_id=message_id))
                 await db_session.commit()
 
                 logger.info(
@@ -63,9 +57,7 @@ class EmailQueueService:
                 )
 
         except Exception as e:
-            logger.error(
-                "Failed to update send log message ID", log_id=log_id, error=str(e)
-            )
+            logger.error("Failed to update send log message ID", log_id=log_id, error=str(e))
 
     async def send_email_background(
         self,
@@ -78,9 +70,7 @@ class EmailQueueService:
     ) -> None:
         """Send email in background and update send log with message ID."""
         try:
-            message_id = await self.mailer.send_email(
-                to=[to], subject=subject, html=html, text=text, headers=headers
-            )
+            message_id = await self.mailer.send_email(to=[to], subject=subject, html=html, text=text, headers=headers)
 
             # Update the send log with the message ID (or None if failed)
             await self.update_send_log_message_id(log_id, message_id)
@@ -93,13 +83,9 @@ class EmailQueueService:
                     message_id=message_id,
                 )
             else:
-                logger.error(
-                    "Background email send failed", log_id=log_id, recipient=to
-                )
+                logger.error("Background email send failed", log_id=log_id, recipient=to)
 
         except Exception as e:
-            logger.error(
-                "Background email send error", log_id=log_id, recipient=to, error=str(e)
-            )
+            logger.error("Background email send error", log_id=log_id, recipient=to, error=str(e))
             # Update with None to indicate failure
             await self.update_send_log_message_id(log_id, None)
