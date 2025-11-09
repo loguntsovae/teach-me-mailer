@@ -64,13 +64,8 @@ async def test_engine():
 @pytest.fixture
 async def test_session(test_engine):
     """Create test database session."""
-    TestSessionLocal = sessionmaker(
-        test_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-
-    async with TestSessionLocal() as session:
+    # Create an AsyncSession directly to satisfy typing and avoid sessionmaker overload
+    async with AsyncSession(test_engine, expire_on_commit=False) as session:
         yield session
 
 

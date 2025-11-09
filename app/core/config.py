@@ -84,6 +84,13 @@ class Settings(BaseSettings):
         description="Length of generated API keys",
     )
 
+    # Sentry DSN (optional)
+    sentry_dsn: Optional[str] = Field(
+        default=None,
+        alias="SENTRY_DSN",
+        description="Sentry DSN for error tracking (optional)",
+    )
+
     # Security settings
     cors_origins: Optional[List[str]] = Field(
         default=None,
@@ -180,7 +187,10 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     try:
-        return Settings()
+        # mypy sees required named args on the generated Settings signature;
+        # in runtime pydantic reads environment variables so calling with no
+        # args is valid. Silence the false-positive here.
+        return Settings()  # type: ignore[call-arg]
     except Exception as e:
         print(f"❌ Configuration Error: {e}")
         print("💡 Check your environment variables and .env file")

@@ -12,16 +12,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.api.v1 import routes
+from app.api.v1 import router as v1routes
 from app.core.config import get_settings
 
-# Initialize Sentry SDK
-sentry_sdk.init(
-    dsn="https://fccb9ee60a71cb42db499c0546e83160@o4510323039535104.ingest.de.sentry.io/4510323045892176",
-    integrations=[FastApiIntegration()],
-    traces_sample_rate=1.0,
-    environment="dev",
-)
+# Initialize Sentry SDK from settings (only if DSN provided)
+settings_for_sentry = get_settings()
+if getattr(settings_for_sentry, "sentry_dsn", None):
+    sentry_sdk.init(
+        dsn=settings_for_sentry.sentry_dsn,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=1.0,
+        environment="dev",
+    )
+    # Log that Sentry was initialized (do not log the DSN itself)
+    structlog.get_logger(__name__).info("Sentry initialized", sentry_initialized=True)
 
 
 # Configure structured logging
@@ -215,14 +219,14 @@ def create_app() -> FastAPI:
 
     # Include API routes
     app.include_router(
-        routes.router,
+        v1routes.router,
         prefix="/api/v1",
         tags=["mail"],
     )
 
     # Add health endpoint at root level
     app.include_router(
-        routes.router,
+        v1routes.router,
         prefix="",
         tags=["health"],
         include_in_schema=False,

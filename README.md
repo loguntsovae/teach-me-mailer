@@ -134,6 +134,18 @@ SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 DEBUG=true
 ```
 
+### 🐞 Sentry (optional)
+
+The application supports Sentry for error tracking. Set the `SENTRY_DSN` environment variable to enable Sentry integration. If the variable is not set, Sentry will not be initialized.
+
+Example (macOS / zsh):
+
+```bash
+export SENTRY_DSN="https://<public>@oXXXXX.ingest.sentry.io/<project>"
+```
+
+Note: The DSN is treated as sensitive and will not be logged. You can control the Sentry behavior via the `SENTRY_DSN` environment variable or in your `.env` file.
+
 ## 📚 API Endpoints Overview
 
 ### 📤 Send Email

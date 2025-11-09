@@ -1,6 +1,7 @@
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
 
@@ -13,11 +14,12 @@ engine = create_async_engine(
     future=True,
 )
 
-# Use async_sessionmaker which is typed for AsyncSession
-AsyncSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
-    engine,
+# Create async session factory
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
     expire_on_commit=False,
-)
+)  # type: ignore[call-overload]
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:

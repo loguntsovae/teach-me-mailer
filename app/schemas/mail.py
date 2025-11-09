@@ -74,3 +74,25 @@ class HealthResponse(BaseModel):
                 "version": "0.1.0",
             }
         }
+
+
+class CreateAPIKeyRequest(BaseModel):
+    name: str = Field(..., description="Name for the API key")
+    daily_limit: Optional[int] = Field(None, description="Optional daily email limit for the key")
+
+
+class CreateAPIKeyResponse(BaseModel):
+    id: str = Field(..., description="API key record ID")
+    plain_key: str = Field(..., description="Plain API key (save this; shown only once)")
+    name: str
+    daily_limit: Optional[int]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "plain_key": "sk_test_abcdefghijklmnop",
+                "name": "service-integration",
+                "daily_limit": 100,
+            }
+        }
