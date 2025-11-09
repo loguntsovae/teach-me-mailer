@@ -6,4 +6,3 @@ from sqlalchemy.ext.declarative import declarative_base
 metadata = MetaData(schema="mailer")
 
 Base = declarative_base(metadata=metadata)
-

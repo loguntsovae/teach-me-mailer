@@ -19,7 +19,7 @@ try:
         print("✅ Database devdb exists")
     else:
         print("ℹ️ Database devdb not found, creating...")
-        cur.execute('CREATE DATABASE devdb')
+        cur.execute("CREATE DATABASE devdb")
         print("✅ Created database devdb")
     cur.close()
     conn.close()

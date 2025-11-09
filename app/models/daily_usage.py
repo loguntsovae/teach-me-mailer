@@ -12,7 +12,9 @@ class DailyUsage(Base):
     __tablename__ = "daily_usage"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    api_key_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False, index=True)
+    api_key_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False, index=True
+    )
     day: Mapped[Date] = mapped_column(Date, nullable=False)
     count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
