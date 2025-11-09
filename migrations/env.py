@@ -4,6 +4,7 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.db.base import Base
+import app.models  # ensure all model modules are imported so metadata is populated for autogenerate
 
 
 # Alembic Config object
@@ -31,6 +32,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -41,7 +43,8 @@ def run_migrations_online() -> None:
     connectable = create_engine(sync_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        # include_schemas=True so Alembic compares objects across non-public schemas
+        context.configure(connection=connection, target_metadata=target_metadata, include_schemas=True)
 
         with context.begin_transaction():
             context.run_migrations()
