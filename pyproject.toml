@@ -27,7 +27,7 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=6.1.0",
     "greenlet>=3.2.4",
     "psycopg2-binary>=2.9.11",
-    "gunicorn>=23.0.0",
+    "uvicorn>=0.38.0",
 ]
 
 [dependency-groups]

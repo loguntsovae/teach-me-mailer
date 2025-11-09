@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # Database (REQUIRED)
     database_url: str = Field(
-        ...,  # Required field
+        default="postgresql+asyncpg://postgres:postgres@localhost:5432/devdb",
         alias="DATABASE_URL",
         description="PostgreSQL connection URL",
     )
@@ -182,7 +182,6 @@ def get_settings() -> Settings:
         # in runtime pydantic reads environment variables so calling with no
         # args is valid. Silence the false-positive here.
         return Settings(
-            DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/devdb",
             SMTP_HOST="smtp.example.com",
             SMTP_USER="user@example.com",
             SMTP_PASSWORD="password",

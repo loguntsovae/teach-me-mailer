@@ -11,9 +11,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN groupadd --gid 1000 appuser && \
     useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
 
-# Install system dependencies, postgresql-client (for pg_isready), and uv
+# Install system dependencies, postgresql-client (for pg_isready), bash, and uv
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        bash \
         gcc \
         libc6-dev \
         curl \
@@ -51,15 +52,15 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
-# Expose port
-EXPOSE 8000
+# Expose port (default for APP_PORT)
+EXPOSE 8088
 
-# Health check
+# Health check (uses APP_PORT at runtime)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+    CMD sh -c 'curl -f http://localhost:${APP_PORT:-8088}/api/v1/health || exit 1'
 
-# Run the application
-CMD ["uv", "run", "--no-sync", "gunicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application via entrypoint script which handles migrations and starts uvicorn
+CMD ["/docker/entrypoint.sh"]
 
 # Production stage
 FROM base AS production
@@ -69,9 +70,10 @@ FROM base AS production
 # Development stage
 FROM base AS development
 
-# Install development dependencies
+# Install development dependencies (ensure bash is available)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        bash \
         gcc \
         libc6-dev \
         curl \
