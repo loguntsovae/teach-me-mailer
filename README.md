@@ -211,7 +211,7 @@ make coverage
 Our CI pipeline runs on every push and pull request:
 
 1. **Code Quality**: Black, isort, flake8, mypy
-2. **Security**: Bandit security scanning
+2. **Security**: Safety dependency checks
 3. **Tests**: Full test suite with coverage reporting
 4. **Build**: Docker image build and vulnerability scanning
 

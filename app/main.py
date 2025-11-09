@@ -57,12 +57,8 @@ def mask_sensitive_data(logger, method_name, event_dict):
                     masked[key] = mask_dict(value, f"{path}.{key}" if path else key)
             return masked
         elif isinstance(data, str):
-            # Mask values that look like credentials (long strings with mixed case/numbers)
-            if (
-                len(data) > 20
-                and any(c.isdigit() for c in data)
-                and any(c.isupper() for c in data)
-            ):
+            # Mask values that look like credentials
+            if len(data) > 20 and any(c.isdigit() for c in data) and any(c.isupper() for c in data):
                 return f"{data[:4]}***MASKED***{data[-4:]}"
             return data
         elif isinstance(data, list):
@@ -174,9 +170,11 @@ def create_app() -> FastAPI:
         if request.headers.get("content-length"):
             content_length = int(request.headers["content-length"])
             if content_length > max_size:
+                msg = f"Request entity too large. Maximum size is {max_size // 1024}KB."
+                content = f"{{'detail': '{msg}'}}"
                 return Response(
                     status_code=413,
-                    content=f'{{"detail": "Request entity too large. Maximum size is {max_size // 1024}KB."}}',
+                    content=content,
                     media_type="application/json",
                 )
 
@@ -255,16 +253,3 @@ async def root():
         "docs": "/docs" if settings.debug else "disabled",
         "health": "/health",
     }
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    settings = get_settings()
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.debug,
-        log_level=settings.log_level.lower(),
-    )

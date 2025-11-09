@@ -78,16 +78,12 @@ class HealthResponse(BaseModel):
 
 class CreateAPIKeyRequest(BaseModel):
     name: str = Field(..., description="Name for the API key")
-    daily_limit: Optional[int] = Field(
-        None, description="Optional daily email limit for the key"
-    )
+    daily_limit: Optional[int] = Field(None, description="Optional daily email limit for the key")
 
 
 class CreateAPIKeyResponse(BaseModel):
     id: str = Field(..., description="API key record ID")
-    plain_key: str = Field(
-        ..., description="Plain API key (save this; shown only once)"
-    )
+    plain_key: str = Field(..., description="Plain API key (save this; shown only once)")
     name: str
     daily_limit: Optional[int]
 

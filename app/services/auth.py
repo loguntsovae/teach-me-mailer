@@ -36,9 +36,7 @@ class AuthService:
         """Verify API key against hash."""
         return bcrypt.checkpw(api_key.encode("utf-8"), hashed.encode("utf-8"))
 
-    async def validate_api_key_detailed(
-        self, api_key: str
-    ) -> Tuple[AuthResult, Optional[APIKey]]:
+    async def validate_api_key_detailed(self, api_key: str) -> Tuple[AuthResult, Optional[APIKey]]:
         """Validate an API key and return detailed result.
 
         Returns:

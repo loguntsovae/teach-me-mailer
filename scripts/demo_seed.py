@@ -39,9 +39,7 @@ async def create_demo_api_key():
     # Save to database
     async for session in get_async_session():
         # Check if demo key already exists
-        result = await session.execute(
-            select(APIKey).where(APIKey.name == "Demo API Key")
-        )
+        result = await session.execute(select(APIKey).where(APIKey.name == "Demo API Key"))
         existing_key = result.scalar_one_or_none()
 
         if existing_key:
@@ -78,8 +76,10 @@ async def main():
             "  -d '{\n"
             '    "to": "test@example.com",\n'
             '    "subject": "Hello from Teach Me Mailer! 👋",\n'
-            '    "html_body": "<h1>Welcome!</h1><p>Your email service is working perfectly.</p>",\n'
-            '    "text_body": "Welcome! Your email service is working perfectly."\n'
+            '    "html_body": "<h1>Welcome!</h1><p>Your email service is '
+            'working perfectly.</p>",\n'
+            '    "text_body": "Welcome! Your email service is working '
+            'perfectly."\n'
             "  }'"
         )
         print()

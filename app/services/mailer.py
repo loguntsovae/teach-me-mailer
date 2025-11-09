@@ -76,9 +76,7 @@ class MailerService:
         else:
             # Simple message with single content type
             # Ensure content is a non-None string for MIMEText
-            content: str = (
-                html if html is not None else (text if text is not None else "")
-            )
+            content: str = html if html is not None else (text if text is not None else "")
             content_type = "html" if html else "plain"
 
             msg = MIMEText(content, content_type, "utf-8")
@@ -115,9 +113,7 @@ class MailerService:
             )
 
             # Extract message ID from SMTP response
-            message_id = (
-                self._extract_message_id(result) or f"msg_{uuid.uuid4().hex[:12]}"
-            )
+            message_id = self._extract_message_id(result) or f"msg_{uuid.uuid4().hex[:12]}"
 
             logger.info(
                 "Email sent successfully",

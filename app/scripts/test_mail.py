@@ -31,12 +31,9 @@ async def test_email_sending():
         print()
 
         # Check if Gmail App Password is set
-        if (
-            not settings.smtp_password
-            or settings.smtp_password == "${GMAIL_APP_PASSWORD}"
-        ):
+        if not settings.smtp_password:
             print("❌ SMTP_PASSWORD is not set correctly!")
-            print("   Please set GMAIL_APP_PASSWORD environment variable")
+            print("   Please set SMTP_PASSWORD environment variable")
             print("   or update the .env file with your Gmail App Password")
             return False
 
@@ -65,29 +62,28 @@ Mail Gateway Service
 """
 
         html_body = """
-<html>
-<body>
-    <h2>🎉 Gmail SMTP Test Successful!</h2>
-    <p>Hello!</p>
-    <p>This is a test email from your <strong>Mail Gateway Service</strong> to verify Gmail SMTP configuration.</p>
-    <p>If you receive this email, your Gmail SMTP setup is working correctly!</p>
+    <html>
+    <body>
+        <h2>🎉 Gmail SMTP Test Successful!</h2>
+        <p>Hello!</p>
+        <p>This is a test email from your <strong>Mail Gateway Service</strong> to
+        verify Gmail SMTP configuration.</p>.
+        <p>If you receive this email, your Gmail SMTP setup is working correctly!</p>
 
-    <h3>Configuration Details:</h3>
-    <ul>
+        <h3>Configuration Details:</h3>
+        <ul>
         <li><strong>SMTP Host:</strong> smtp.gmail.com</li>
         <li><strong>SMTP Port:</strong> 587</li>
         <li><strong>STARTTLS:</strong> Enabled</li>
-    </ul>
+        </ul>
 
-    <p>Best regards,<br>
-    <em>Mail Gateway Service</em></p>
-</body>
-</html>
-"""
+        <p>Best regards,<br>
+        <em>Mail Gateway Service</em></p>
+    </body>
+    </html>
+    """
 
-        message_id = await mailer.send_email(
-            to=[test_recipient], subject=subject, text=text_body, html=html_body
-        )
+        message_id = await mailer.send_email(to=[test_recipient], subject=subject, text=text_body, html=html_body)
 
         if message_id:
             print("✅ Email sent successfully!")

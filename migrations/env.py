@@ -4,7 +4,7 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.db.base import Base
-import app.models  # ensure all model modules are imported so metadata is populated for autogenerate
+import app.models  # noqa: F401 to register models
 
 
 # Alembic Config object

@@ -28,9 +28,7 @@ try:
     # Connect to devdb and show number of tables in public schema
     conn2 = psycopg2.connect(DEV_URL)
     cur2 = conn2.cursor()
-    cur2.execute(
-        "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
-    )
+    cur2.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
     count = cur2.fetchone()[0]
     print(f"Tables in devdb.public: {count}")
     cur2.close()

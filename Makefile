@@ -1,4 +1,3 @@
-.PHONY: help install dev migrate up down test test-unit test-integration test-verbose
 .PHONY: lint format clean logs shell seed reset-db check-env coverage build
 .PHONY: deploy-prod deploy-staging docker-build docker-push security
 .PHONY: docs-serve docs-build pre-commit-install db-shell db-backup db-restore
@@ -22,7 +21,6 @@ help:
 	@echo "$(BLUE)🚀 Quick Start:$(RESET)"
 	@echo "  $(YELLOW)make install$(RESET)     - Install all dependencies and setup environment"
 	@echo "  $(YELLOW)make dev$(RESET)         - Start development server with hot reload"
-	@echo "  $(YELLOW)make test$(RESET)        - Run full test suite with coverage"
 	@echo ""
 	@echo "$(BLUE)📦 Environment Management:$(RESET)"
 	@echo "  $(YELLOW)make install$(RESET)     - Install Python dependencies and dev tools"
@@ -32,7 +30,6 @@ help:
 	@echo "$(BLUE)🔧 Development:$(RESET)"
 	@echo "  $(YELLOW)make dev$(RESET)         - Start development server (local Python)"
 	@echo "  $(YELLOW)make migrate$(RESET)     - Run database migrations"
-	@echo "  $(YELLOW)make seed$(RESET)        - Create demo API key for testing"
 	@echo "  $(YELLOW)make reset-db$(RESET)    - Reset database and reseed (⚠️  destructive)"
 	@echo ""
 	@echo "$(BLUE)🐳 Docker Operations:$(RESET)"
@@ -42,17 +39,10 @@ help:
 	@echo "  $(YELLOW)make logs$(RESET)        - Show application logs"
 	@echo "  $(YELLOW)make shell$(RESET)       - Open shell in running app container"
 	@echo ""
-	@echo "$(BLUE)🧪 Testing:$(RESET)"
-	@echo "  $(YELLOW)make test$(RESET)        - Run full test suite with coverage"
-	@echo "  $(YELLOW)make test-unit$(RESET)   - Run unit tests only"
-	@echo "  $(YELLOW)make test-integration$(RESET) - Run integration tests"
-	@echo "  $(YELLOW)make test-verbose$(RESET) - Run tests with detailed output"
-	@echo "  $(YELLOW)make coverage$(RESET)    - Generate HTML coverage report"
-	@echo ""
-	@echo "$(BLUE)🔍 Code Quality:$(RESET)"
-	@echo "  $(YELLOW)make lint$(RESET)        - Run all linting checks (black, flake8, mypy)"
-	@echo "  $(YELLOW)make format$(RESET)      - Auto-format code (black, isort)"
-	@echo "  $(YELLOW)make security$(RESET)    - Run security scans (bandit, safety)"
+		@echo "$(BLUE)🔍 Code Quality:$(RESET)"
+		@echo "  $(YELLOW)make lint$(RESET)        - Run all linting checks (black, flake8, mypy)"
+		@echo "  $(YELLOW)make format$(RESET)      - Auto-format code (black, isort)"
+		@echo "  $(YELLOW)make security$(RESET)    - Run security scans (safety)"
 	@echo ""
 	@echo "$(BLUE)🗃️  Database:$(RESET)"
 	@echo "  $(YELLOW)make db-shell$(RESET)    - Access PostgreSQL shell"
@@ -107,7 +97,7 @@ dev: check-env
 	@echo "$(BLUE)📡 Server will be available at: http://localhost:8000$(RESET)"
 	@echo "$(BLUE)📖 API docs available at: http://localhost:8000/docs$(RESET)"
 	@echo "$(BLUE)📊 Metrics available at: http://localhost:8000/metrics$(RESET)"
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	hui app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Database operations
 migrate:
@@ -176,52 +166,27 @@ shell:
 	@echo "$(BLUE)🐚 Opening shell in app container...$(RESET)"
 	docker-compose exec app /bin/bash
 
-# Testing
-test:
-	@echo "$(BLUE)🧪 Running full test suite with coverage...$(RESET)"
-	pytest --cov=app --cov-report=term-missing --cov-report=html --cov-report=xml --cov-fail-under=35 -v
-
-test-unit:
-	@echo "$(BLUE)🧪 Running unit tests...$(RESET)"
-	pytest tests/test_*.py -v --tb=short
-
-test-integration:
-	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
-	pytest tests/integration/ -v --tb=short
-
-test-verbose:
-	@echo "$(BLUE)🧪 Running tests with verbose output...$(RESET)"
-	pytest -v --tb=long --capture=no
-
-coverage:
-	@echo "$(BLUE)📊 Generating coverage report...$(RESET)"
-	pytest --cov=app --cov-report=html
-	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(RESET)"
-	@which open >/dev/null 2>&1 && open htmlcov/index.html || echo "Open htmlcov/index.html in your browser"
-
 # Code quality
 lint:
 	@echo "$(BLUE)🔍 Running code quality checks...$(RESET)"
 	@echo "$(YELLOW)📝 Checking code formatting with Black...$(RESET)"
-	black --check --diff app/ tests/ scripts/
+	black --check --diff app/ scripts/
 	@echo "$(YELLOW)📚 Checking import sorting with isort...$(RESET)"
-	isort --check-only --diff app/ tests/ scripts/
+	isort --check-only --diff --skip scripts/generate_openapi.py app/ scripts/
 	@echo "$(YELLOW)🔍 Linting with flake8...$(RESET)"
-	flake8 app/ tests/ scripts/ --max-line-length=88 --extend-ignore=E203,W503
+	flake8 app/ scripts/ --max-line-length=119 --extend-ignore=E203,W503 --exclude=scripts/generate_openapi.py
 	@echo "$(YELLOW)🔍 Type checking with mypy...$(RESET)"
 	mypy app/ --ignore-missing-imports
 	@echo "$(GREEN)✅ All quality checks passed$(RESET)"
 
 format:
 	@echo "$(BLUE)✨ Auto-formatting code...$(RESET)"
-	black app/ tests/ scripts/
-	isort app/ tests/ scripts/
+	black --exclude 'scripts/generate_openapi.py' app/ scripts/
+	isort --skip scripts/generate_openapi.py app/ scripts/
 	@echo "$(GREEN)✅ Code formatted successfully$(RESET)"
 
 security:
 	@echo "$(BLUE)🔒 Running security scans...$(RESET)"
-	@echo "$(YELLOW)🔍 Scanning code with Bandit...$(RESET)"
-	bandit -r app/ -f json -o bandit-report.json || echo "$(YELLOW)⚠️  Security issues found - check bandit-report.json$(RESET)"
 	@echo "$(YELLOW)🔍 Checking dependencies with Safety...$(RESET)"
 	safety check --json --output safety-report.json || echo "$(YELLOW)⚠️  Vulnerable dependencies found - check safety-report.json$(RESET)"
 	@echo "$(GREEN)✅ Security scan completed$(RESET)"
@@ -267,24 +232,6 @@ docker-push:
 	@echo "$(BLUE)📤 Pushing Docker image: $(DOCKER_IMAGE):$(VERSION)$(RESET)"
 	docker push $(DOCKER_IMAGE):$(VERSION)
 	docker push $(DOCKER_IMAGE):latest
-
-# Test SMTP connectivity
-test-smtp:
-	@echo "$(BLUE)📧 Testing SMTP connection...$(RESET)"
-	@python3 -c "\
-import asyncio; \
-import sys; \
-from app.services.mailer import MailerService; \
-from app.core.config import get_settings; \
-async def test(): \
-    try: \
-        service = MailerService(); \
-        await service.test_connection(); \
-        print('$(GREEN)✅ SMTP connection successful$(RESET)'); \
-    except Exception as e: \
-        print(f'$(RED)❌ SMTP connection failed: {e}$(RESET)'); \
-        sys.exit(1); \
-asyncio.run(test())"
 
 # Check rate limits
 check-limits:

@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from sqlalchemy import Date, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -18,9 +17,7 @@ class DailyUsage(Base):
     day: Mapped[Date] = mapped_column(Date, nullable=False)
     count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("api_key_id", "day", name="uq_daily_usage_api_key_day"),
-    )
+    __table_args__ = (UniqueConstraint("api_key_id", "day", name="uq_daily_usage_api_key_day"),)
 
     def __repr__(self) -> str:
-        return f"<DailyUsage(id={self.id}, api_key_id={self.api_key_id}, day={self.day}, count={self.count})>"
+        return f"<DailyUsage(id={self.id}, api_key_id={self.api_key_id}, " f"day={self.day}, count={self.count})>"

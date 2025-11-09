@@ -27,9 +27,7 @@ def generate_api_key(length: int = 32) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-async def create_api_key(
-    name: str, daily_limit: Optional[int] = None, is_active: bool = True
-) -> tuple[str, str]:
+async def create_api_key(name: str, daily_limit: Optional[int] = None, is_active: bool = True) -> tuple[str, str]:
     """
     Create a new API key and return (plain_key, api_key_id).
 
@@ -115,9 +113,7 @@ async def main() -> None:
 
     try:
         # Create the API key
-        plain_key, api_key_id = await create_api_key(
-            name=name, daily_limit=daily_limit, is_active=True
-        )
+        plain_key, api_key_id = await create_api_key(name=name, daily_limit=daily_limit, is_active=True)
 
         print("API key created successfully!")
         print()
@@ -136,14 +132,10 @@ async def main() -> None:
         print("Usage example:")
         print('curl -H "X-API-Key: {}" \\'.format(plain_key))
         print('     -H "Content-Type: application/json" \\')
-        print(
-            '     -d \'{"to": "test@example.com", "subject": "Test", "text": "Hello!"}\' \\'
-        )
+        print('     -d \'{"to": "test@example.com", "subject": "Test", ' '"text": "Hello!"}\' \\')
         print("     http://localhost:8000/api/v1/send")
         print()
-        print(
-            "The plaintext key is now removed from memory and will not be shown again."
-        )
+        print("The plaintext key is now removed from memory and will not be shown again.")
 
     except Exception:
         print("Failed to create API key")

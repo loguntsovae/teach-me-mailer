@@ -17,6 +17,6 @@ echo "Database is ready."
 echo "Running migrations..."
 uv run alembic upgrade head
 
-# Start FastAPI app with Uvicorn (ASGI)
+# Start FastAPI app with hui (ASGI)
 echo "Starting app..."
-exec uv run uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8088} --workers ${WORKERS:-2}
+exec uv run gunicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8088} --workers ${WORKERS:-2}

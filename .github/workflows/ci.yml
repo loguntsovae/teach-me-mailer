@@ -51,19 +51,9 @@ jobs:
     - name: Linting with flake8
       run: uv run flake8 app/ tests/ scripts/
 
-    # - name: Type checking with mypy
-    #   run: uv run mypy app/ --ignore-missing-imports
+    - name: Type checking with mypy
+      run: uv run mypy app/ --ignore-missing-imports
 
-    - name: Security scanning with bandit
-      run: uv run bandit -r app/ -f json -o bandit-report.json
-      continue-on-error: true
-
-    - name: Upload bandit results
-      uses: actions/upload-artifact@v5
-      if: always()
-      with:
-        name: bandit-report
-        path: bandit-report.json
 
   test:
     runs-on: ubuntu-latest

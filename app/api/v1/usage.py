@@ -31,27 +31,19 @@ async def get_usage(
         )
 
         # Use effective limit for arithmetic since API key daily_limit can be None
-        effective_limit: int = (
-            api_key.daily_limit
-            if api_key.daily_limit is not None
-            else settings.default_daily_limit
-        )
+        effective_limit: int = api_key.daily_limit if api_key.daily_limit is not None else settings.default_daily_limit
 
         return {
             "api_key_id": str(api_key.id),
             "daily_limit": api_key.daily_limit,
             "emails_sent_today": rate_check_result.current_count,
-            "emails_remaining": max(
-                0, effective_limit - rate_check_result.current_count
-            ),
+            "emails_remaining": max(0, effective_limit - rate_check_result.current_count),
             # Compute next reset using the service helper
             "reset_time": atomic_rate_limiter._get_next_midnight_utc().isoformat(),
         }
 
     except Exception as e:
-        logger.error(
-            "Failed to get usage statistics", api_key_id=str(api_key.id), error=str(e)
-        )
+        logger.error("Failed to get usage statistics", api_key_id=str(api_key.id), error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve usage statistics",
