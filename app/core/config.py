@@ -76,6 +76,22 @@ class Settings(BaseSettings):
         min_length=32,
         description="Secret key for signing tokens",
     )
+    # Admin panel protection (optional)
+    admin_username: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_USERNAME",
+        description="Username for BasicAuth protecting the admin UI",
+    )
+    admin_password: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_PASSWORD",
+        description="Password for BasicAuth protecting the admin UI",
+    )
+    admin_api_key: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_API_KEY",
+        description="Alternate simple API key to protect the admin UI (use with header X-ADMIN-KEY)",
+    )
     api_key_length: int = Field(
         default=32,
         alias="API_KEY_LENGTH",

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section>
+    {% if created %}
+      <div class="notice success">
+        <p>API Key created successfully. This plaintext key is shown only once — copy it now.</p>
+        <pre class="plain-key">{{ plain_key }}</pre>
+        <p>Name: {{ key_obj.name }} | ID: {{ key_obj.id }}</p>
+        <p><a href="/admin/api-keys">Back to list</a></p>
+      </div>
+    {% else %}
+      <form method="post" action="/admin/api-keys/create" class="form">
+        <label for="name">Name</label>
+        <input id="name" name="name" required />
+
+  <label for="daily_limit">Daily limit (optional, leave blank for default)</label>
+  <input id="daily_limit" name="daily_limit" type="number" min="1" />
+
+        <button class="btn" type="submit">Create</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

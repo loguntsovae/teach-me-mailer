@@ -126,6 +126,14 @@ SMTP_FROM_ADDRESS=your-email@gmail.com
 CORS_ORIGINS=["http://localhost:3000"]
 MAX_REQUEST_SIZE=262144
 
+# Admin UI protection (optional)
+# Use BasicAuth for the admin UI (recommended for local/dev). Set both values to enable BasicAuth.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme
+
+# Alternatively, protect admin with a header X-ADMIN-KEY
+# ADMIN_API_KEY=some-very-secret-value
+
 # Observability
 LOG_LEVEL=INFO
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id

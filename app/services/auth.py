@@ -98,6 +98,13 @@ class AuthService:
         # Hash the API key
         key_hash = self._hash_api_key(api_key)
 
+        # Normalize daily_limit: treat non-positive values as unspecified (None)
+        if daily_limit is not None and daily_limit <= 0:
+            logger.warning(
+                "Provided daily_limit is non-positive; treating as unspecified", name=name, provided=daily_limit
+            )
+            daily_limit = None
+
         # Create API key object
         key_obj = APIKey(
             key_hash=key_hash,

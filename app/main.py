@@ -9,10 +9,12 @@ import sentry_sdk
 import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.api.v1 import router as v1routes
+from app.api.v1.admin import router as admin_router
 from app.core.config import get_settings
 
 # Initialize Sentry SDK from settings (only if DSN provided)
@@ -225,6 +227,12 @@ def create_app() -> FastAPI:
         prefix="/api/v1",
         tags=["mail"],
     )
+
+    # Mount admin router directly at /admin for convenience
+    app.include_router(admin_router, prefix="")
+
+    # Serve static assets for admin templates
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
     # Add health endpoint at root level
     app.include_router(
