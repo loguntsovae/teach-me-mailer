@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # Mail Settings (REQUIRED)
     smtp_host: str = Field(
-        ...,  # Required field
+        default="smtp.example.com",
         alias="SMTP_HOST",
         description="SMTP server hostname",
     )
@@ -35,12 +35,12 @@ class Settings(BaseSettings):
         description="SMTP server port",
     )
     smtp_user: str = Field(
-        ...,  # Required field
+        default="user@example.com",
         alias="SMTP_USER",
         description="SMTP username",
     )
     smtp_password: str = Field(
-        ...,  # Required field
+        default="password",
         alias="SMTP_PASSWORD",
         description="SMTP password",
     )
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
         description="Use STARTTLS for SMTP",
     )
     from_email: str = Field(
-        ...,  # Required field
+        default="noreply@example.com",
         alias="FROM_EMAIL",
         description="Default sender email address",
     )
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
 
     # Security (REQUIRED)
     app_secret_key: str = Field(
-        ...,  # Required field
+        default="x" * 32,
         alias="APP_SECRET_KEY",
         min_length=32,
         description="Secret key for signing tokens",

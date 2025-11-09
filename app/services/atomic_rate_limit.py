@@ -120,6 +120,10 @@ class AtomicRateLimitService:
                     )
                     res = await self.db.execute(stmt)
                     usage = res.scalar_one_or_none()
+
+                    if usage is None:
+                        raise ValueError("DailyUsage row not found after FOR UPDATE lock")
+
                     old_count = usage.count
                     usage.count = usage.count + email_count
                     new_count = usage.count
