@@ -399,6 +399,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+## 🔁 Example: Minimal client service
+
+A tiny example client that demonstrates how an external service can call this mailer is included at `examples/client_service`.
+
+- `examples/client_service/app.py` — minimal FastAPI app exposing `POST /trigger` which forwards requests to the mailer `/api/v1/send` endpoint using the `X-API-Key` header.
+- `examples/client_service/.env.example` — example configuration (set `MAILER_API_KEY` and `MAILER_SEND_URL`).
+- `examples/client_service/README.md` — quick start instructions for the example client.
+
+This example is intentionally minimal and intended for local testing and integration demonstrations. It does not attempt to be production-ready.
+
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Inspired by modern email service architectures
 - Thanks to all contributors and the open-source community
