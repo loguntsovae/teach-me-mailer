@@ -49,6 +49,15 @@ help:
 	@echo "  $(YELLOW)make db-backup$(RESET)   - Create database backup"
 	@echo "  $(YELLOW)make db-status$(RESET)   - Show database status"
 	@echo ""
+	@echo "$(BLUE)🧪 Testing:$(RESET)"
+	@echo "  $(YELLOW)make test$(RESET)        - Run all tests with coverage"
+	@echo "  $(YELLOW)make test-unit$(RESET)   - Run unit tests only"
+	@echo "  $(YELLOW)make test-integration$(RESET) - Run integration tests only"
+	@echo "  $(YELLOW)make test-e2e$(RESET)    - Run end-to-end tests only"
+	@echo "  $(YELLOW)make test-watch$(RESET)  - Run tests in watch mode"
+	@echo "  $(YELLOW)make test-coverage$(RESET) - Generate coverage report"
+	@echo "  $(YELLOW)make setup-test-db$(RESET) - Setup test database"
+	@echo ""
 	@echo "$(BLUE)📚 Documentation:$(RESET)"
 	@echo "  $(YELLOW)make docs-serve$(RESET)  - Serve documentation locally"
 	@echo "  $(YELLOW)make docs-build$(RESET)  - Build documentation"
@@ -244,3 +253,57 @@ check-limits:
 	LEFT JOIN daily_usage u ON k.id = u.api_key_id AND u.date = CURRENT_DATE
 	WHERE k.is_active = true;
 	"
+
+# Testing commands
+setup-test-db:
+	@echo "$(BLUE)🗃️  Setting up test database...$(RESET)"
+	python3 scripts/setup_test_db.py
+	@echo "$(GREEN)✅ Test database ready$(RESET)"
+
+test: check-env
+	@echo "$(BLUE)🧪 Running all tests with coverage...$(RESET)"
+	pytest --cov=app --cov-report=html --cov-report=xml --cov-report=term-missing
+	@echo "$(GREEN)✅ Tests completed$(RESET)"
+	@echo "$(BLUE)📊 Coverage report: htmlcov/index.html$(RESET)"
+
+test-unit:
+	@echo "$(BLUE)🧪 Running unit tests...$(RESET)"
+	pytest tests/unit/ -v
+	@echo "$(GREEN)✅ Unit tests completed$(RESET)"
+
+test-integration:
+	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
+	pytest tests/integration/ -v
+	@echo "$(GREEN)✅ Integration tests completed$(RESET)"
+
+test-e2e:
+	@echo "$(BLUE)🧪 Running end-to-end tests...$(RESET)"
+	pytest tests/e2e/ -v
+	@echo "$(GREEN)✅ E2E tests completed$(RESET)"
+
+test-watch:
+	@echo "$(BLUE)🧪 Running tests in watch mode...$(RESET)"
+	@echo "$(YELLOW)Press Ctrl+C to stop$(RESET)"
+	pytest-watch -- -v
+
+test-coverage:
+	@echo "$(BLUE)📊 Generating coverage report...$(RESET)"
+	pytest --cov=app --cov-report=html --cov-report=term-missing
+	@echo "$(GREEN)✅ Coverage report generated$(RESET)"
+	@echo "$(BLUE)📂 Opening coverage report...$(RESET)"
+	open htmlcov/index.html || xdg-open htmlcov/index.html
+
+test-fast:
+	@echo "$(BLUE)⚡ Running tests in parallel (fast mode)...$(RESET)"
+	pytest -n auto --maxfail=1 -q
+	@echo "$(GREEN)✅ Fast tests completed$(RESET)"
+
+test-smoke:
+	@echo "$(BLUE)🔥 Running smoke tests...$(RESET)"
+	pytest tests/test_smoke.py -v
+	@echo "$(GREEN)✅ Smoke tests passed$(RESET)"
+
+test-clean:
+	@echo "$(BLUE)🧹 Cleaning test artifacts...$(RESET)"
+	rm -rf .pytest_cache htmlcov .coverage coverage.xml
+	@echo "$(GREEN)✅ Test artifacts cleaned$(RESET)"
