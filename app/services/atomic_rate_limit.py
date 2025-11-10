@@ -3,7 +3,8 @@ from datetime import date, datetime, timedelta, timezone
 from typing import NamedTuple, Optional
 
 import structlog
-from sqlalchemy import select, text
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -40,81 +41,118 @@ class AtomicRateLimitService:
             # Get effective daily limit for this API key
             effective_limit = await self._get_effective_daily_limit(api_key_id)
 
-            # Perform atomic increment first, then check limits
-            # This ensures we always get consistent data
-            upsert_sql = text(
-                """
-                INSERT INTO daily_usage (api_key_id, day, count)
-                VALUES (:api_key_id, :day, :email_count)
-                ON CONFLICT (api_key_id, day)
-                DO UPDATE SET count = daily_usage.count + :email_count
-                RETURNING count, count - :email_count as old_count
-            """
-            )
+            # Use a transactional SELECT ... FOR UPDATE to atomically read/update the
+            # DailyUsage row. If the row does not exist we create it. Handle a possible
+            # race where two transactions try to create the row simultaneously by
+            # catching IntegrityError and retrying once.
+            class _RateLimitExceeded(Exception):
+                def __init__(self, old_count: int):
+                    self.old_count = old_count
 
-            result = await self.db.execute(
-                upsert_sql,
-                {
-                    "api_key_id": str(api_key_id),
-                    "day": today,
-                    "email_count": email_count,
-                },
-            )
-
-            row = result.fetchone()
-            if not row:
-                raise Exception("Atomic upsert failed")
-
-            new_count = row[0]
-            old_count = row[1]
-
-            # Now check if the operation should have been allowed
-            if new_count > effective_limit:
-                # Rollback the increment by reversing the operation
-                rollback_sql = text(
-                    """
-                    UPDATE daily_usage
-                    SET count = count - :email_count
-                    WHERE api_key_id = :api_key_id AND day = :day
-                """
+            try:
+                stmt = (
+                    select(DailyUsage)
+                    .where(DailyUsage.api_key_id == api_key_id, DailyUsage.day == today)
+                    .with_for_update()
                 )
-                await self.db.execute(
-                    rollback_sql,
-                    {
-                        "api_key_id": str(api_key_id),
-                        "day": today,
-                        "email_count": email_count,
-                    },
-                )
+                res = await self.db.execute(stmt)
+                usage = res.scalar_one_or_none()
 
+                if usage is None:
+                    # create a new row
+                    usage = DailyUsage(api_key_id=api_key_id, day=today, count=email_count)
+                    self.db.add(usage)
+                    # flush to assign DB defaults / persist
+                    await self.db.flush()
+                    old_count = 0
+                    new_count = usage.count
+                else:
+                    old_count = usage.count
+                    usage.count = usage.count + email_count
+                    new_count = usage.count
+
+                # If the new count exceeds the limit, raise to rollback the transaction
+                if new_count > effective_limit:
+                    # raising will rollback the current transaction
+                    raise _RateLimitExceeded(old_count)
+
+                # if we reach here the transaction committed successfully
+                logger.info(
+                    "Rate limit check passed",
+                    api_key_id=str(api_key_id),
+                    day=today.isoformat(),
+                    new_count=new_count,
+                    effective_limit=effective_limit,
+                    email_count=email_count,
+                )
+                return RateLimitResult(allowed=True, current_count=new_count, retry_after_seconds=None)
+
+            except _RateLimitExceeded as ex:
                 retry_after = self._calculate_retry_after_seconds()
                 logger.warning(
                     "Rate limit exceeded",
                     api_key_id=str(api_key_id),
                     day=today.isoformat(),
-                    current_count=old_count,
+                    current_count=ex.old_count,
                     effective_limit=effective_limit,
                     requested_count=email_count,
                     retry_after_seconds=retry_after,
                 )
-                await self.db.flush()
-                return RateLimitResult(
-                    allowed=False,
-                    current_count=old_count,
-                    retry_after_seconds=retry_after,
-                )
+                return RateLimitResult(allowed=False, current_count=ex.old_count, retry_after_seconds=retry_after)
+            except IntegrityError:
+                # Rare race when two transactions inserted the row at the same time.
+                # In that case, retry the operation once by selecting the row and
+                # applying the increment under a transaction.
+                # Rollback the failed transaction before retrying to ensure the
+                # session is clean; otherwise attempting to begin a new
+                # transaction can raise InvalidRequestError.
+                try:
+                    await self.db.rollback()
+                except Exception:
+                    # ignore rollback errors here; we'll surface the original problem
+                    pass
 
-            logger.info(
-                "Rate limit check passed",
-                api_key_id=str(api_key_id),
-                day=today.isoformat(),
-                new_count=new_count,
-                effective_limit=effective_limit,
-                email_count=email_count,
-            )
-            await self.db.flush()
-            await self.db.commit()  # Commit so subsequent operations can see this data
-            return RateLimitResult(allowed=True, current_count=new_count, retry_after_seconds=None)
+                try:
+                    stmt = (
+                        select(DailyUsage)
+                        .where(DailyUsage.api_key_id == api_key_id, DailyUsage.day == today)
+                        .with_for_update()
+                    )
+                    res = await self.db.execute(stmt)
+                    usage = res.scalar_one_or_none()
+
+                    if usage is None:
+                        raise ValueError("DailyUsage row not found after FOR UPDATE lock")
+
+                    old_count = usage.count
+                    usage.count = usage.count + email_count
+                    new_count = usage.count
+
+                    if new_count > effective_limit:
+                        raise _RateLimitExceeded(old_count)
+
+                    logger.info(
+                        "Rate limit check passed (retry)",
+                        api_key_id=str(api_key_id),
+                        day=today.isoformat(),
+                        new_count=new_count,
+                        effective_limit=effective_limit,
+                        email_count=email_count,
+                    )
+                    return RateLimitResult(allowed=True, current_count=new_count, retry_after_seconds=None)
+
+                except _RateLimitExceeded as ex:
+                    retry_after = self._calculate_retry_after_seconds()
+                    logger.warning(
+                        "Rate limit exceeded (retry)",
+                        api_key_id=str(api_key_id),
+                        day=today.isoformat(),
+                        current_count=ex.old_count,
+                        effective_limit=effective_limit,
+                        requested_count=email_count,
+                        retry_after_seconds=retry_after,
+                    )
+                    return RateLimitResult(allowed=False, current_count=ex.old_count, retry_after_seconds=retry_after)
 
         except Exception as e:
             logger.error(
@@ -188,7 +226,7 @@ class AtomicRateLimitService:
 
             # Get total emails sent (all time)
             total_sent_result = await self.db.execute(
-                select(text("COUNT(*)")).select_from(SendLog).where(SendLog.api_key_id == api_key_id)
+                select(func.count()).select_from(SendLog).where(SendLog.api_key_id == api_key_id)
             )
             total_sent = total_sent_result.scalar() or 0
 
@@ -225,8 +263,12 @@ class AtomicRateLimitService:
             result = await self.db.execute(select(APIKey.daily_limit).where(APIKey.id == api_key_id))
             daily_limit = result.scalar_one_or_none()
 
-            # Use API key specific limit or default from settings
-            return daily_limit if daily_limit is not None else self.settings.default_daily_limit
+            # Treat None or non-positive limits as unspecified and fall back to default
+            if daily_limit is None or (isinstance(daily_limit, int) and daily_limit <= 0):
+                return self.settings.default_daily_limit
+
+            # Use API key specific positive limit
+            return daily_limit
 
         except Exception as e:
             logger.error(

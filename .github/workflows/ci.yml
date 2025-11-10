@@ -81,10 +81,121 @@ jobs:
         name: safety-report
         path: safety-report.json
 
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests with Coverage
+    needs: [lint]
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_teach_me_mailer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-py${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-py${{ matrix.python-version }}-
+
+    - name: Install dependencies
+      run: uv sync --group dev --group test
+
+    - name: Setup test database
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+      run: |
+        uv run python scripts/setup_test_db.py
+
+    - name: Run unit tests
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+        SMTP_HOST: smtp.test.com
+        SMTP_PORT: 587
+        SMTP_USER: test@test.com
+        SMTP_PASSWORD: test_password
+        SMTP_FROM: noreply@test.com
+        APP_SECRET_KEY: test-secret-key-for-testing-only-do-not-use-in-production
+      run: |
+        uv run pytest tests/unit -v --cov=app --cov-report=term
+
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+        SMTP_HOST: smtp.test.com
+        SMTP_PORT: 587
+        SMTP_USER: test@test.com
+        SMTP_PASSWORD: test_password
+        SMTP_FROM: noreply@test.com
+        APP_SECRET_KEY: test-secret-key-for-testing-only-do-not-use-in-production
+      run: |
+        uv run pytest tests/integration -v --cov=app --cov-append --cov-report=term
+
+    - name: Run smoke tests
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+        SMTP_HOST: smtp.test.com
+        SMTP_PORT: 587
+        SMTP_USER: test@test.com
+        SMTP_PASSWORD: test_password
+        SMTP_FROM: noreply@test.com
+        APP_SECRET_KEY: test-secret-key-for-testing-only-do-not-use-in-production
+      run: |
+        uv run pytest tests/test_smoke.py -v
+
+    - name: Generate coverage report
+      run: |
+        uv run pytest tests/ --cov=app --cov-report=xml --cov-report=html
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests,py${{ matrix.python-version }}
+        name: codecov-py${{ matrix.python-version }}
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v5
+      if: matrix.python-version == '3.12'
+      with:
+        name: coverage-report
+        path: htmlcov/
+
   build:
     runs-on: ubuntu-latest
     name: Build Docker Image
-    needs: [lint]
+    needs: [lint, test]
 
     steps:
     - name: Checkout code

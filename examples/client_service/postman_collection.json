@@ -1,0 +1,97 @@
+{
+  "info": {
+    "_postman_id": "b1a2c3d4-e5f6-7890-abcd-ef0123456789",
+    "name": "Teach Me Mailer - Example Client",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "client_url",
+      "value": "http://localhost:9000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "sk_test_examplechangeme",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Mailer: Send Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": \"user@example.com\",\n  \"subject\": \"Test from Postman\",\n  \"text\": \"Hello from Postman!\",\n  \"html\": \"<p>Hello from Postman!</p>\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/send",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "send"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Client: Trigger Send",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": \"user@example.com\",\n  \"subject\": \"Test via Client\",\n  \"text\": \"Hello via client!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{client_url}}/trigger",
+          "host": [
+            "{{client_url}}"
+          ],
+          "path": [
+            "trigger"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

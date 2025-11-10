@@ -1,0 +1,16 @@
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; padding: 0; background:#f7f9fc; color:#0b1220 }
+.site-header { background:#0d47a1; color:white; padding:16px }
+.site-header h1 { margin:0; font-size:20px }
+.site-header nav { margin-top:8px }
+.site-header a { color: #cfe3ff; text-decoration:none }
+.site-footer { padding:12px; color:#6b7280; font-size:13px; text-align:center }
+.container { max-width:960px; margin:24px auto; padding:0 16px }
+.table { width:100%; border-collapse:collapse; background:white; }
+.table th, .table td { padding:8px 12px; border-bottom:1px solid #e6eef8; }
+.form { display:flex; flex-direction:column; gap:8px; max-width:480px; background:white; padding:16px }
+.btn { display:inline-block; padding:8px 12px; background:#0d47a1; color:white; border-radius:4px; text-decoration:none }
+.plain-key { background:#0f1724; color:#fff; padding:12px; overflow:auto }
+.notice.success { background:#eef8f3; padding:12px; border-left:4px solid #22c55e }
+.btn.small { padding:6px 8px; font-size:13px }
+.pagination { margin-top:12px; display:flex; justify-content:space-between; align-items:center }
+.pager a.btn { margin-left:8px }

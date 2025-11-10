@@ -1,0 +1,66 @@
+name: PR Coverage Comment
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  coverage-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_teach_me_mailer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --group test
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+        run: |
+          uv run python scripts/setup_test_db.py
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+          SMTP_HOST: smtp.test.com
+          SMTP_PORT: 587
+          SMTP_USER: test@test.com
+          SMTP_PASSWORD: test_password
+          SMTP_FROM: noreply@test.com
+          APP_SECRET_KEY: test-secret-key-for-testing-only-do-not-use-in-production
+        run: |
+          uv run pytest tests/ --cov=app --cov-report=term --cov-report=json
+
+      - name: Coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 90
+          MINIMUM_ORANGE: 70

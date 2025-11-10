@@ -80,12 +80,13 @@ class AuthService:
     async def validate_api_key(self, api_key: str) -> Optional[APIKey]:
         """Validate an API key and return the APIKey object if valid."""
         result, key_obj = await self.validate_api_key_detailed(api_key)
-        return key_obj if result == AuthResult.VALID else None
+        return key_obj if result.value == AuthResult.VALID.value else None
 
     async def create_api_key(
         self,
         name: str,
         daily_limit: Optional[int] = None,
+        allowed_recipients: Optional[list[str]] = None,
     ) -> tuple[APIKey, str]:
         """Create a new API key.
 
@@ -98,11 +99,23 @@ class AuthService:
         # Hash the API key
         key_hash = self._hash_api_key(api_key)
 
+        # Normalize daily_limit: treat non-positive values as unspecified (None)
+        if daily_limit is not None and daily_limit <= 0:
+            logger.warning(
+                "Provided daily_limit is non-positive; treating as unspecified", name=name, provided=daily_limit
+            )
+            daily_limit = None
+
+        # Normalize allowed_recipients: lower-case and strip
+        if allowed_recipients:
+            allowed_recipients = [e.strip().lower() for e in allowed_recipients if e and e.strip()]
+
         # Create API key object
         key_obj = APIKey(
             key_hash=key_hash,
             name=name,
             daily_limit=daily_limit,
+            allowed_recipients=allowed_recipients,
             is_active=True,
         )
 
@@ -125,14 +138,14 @@ class AuthService:
             result = await self.db.execute(stmt)
             key_obj = result.scalar_one_or_none()
 
-            if key_obj:
+            if key_obj is not None:
                 key_obj.is_active = False
                 await self.db.flush()
 
                 logger.info(
                     "API key deactivated",
                     api_key_id=str(api_key_id),
-                    name=key_obj.name,
+                    # name=key_obj.name,
                 )
                 return True
             else:

@@ -1,9 +1,9 @@
 # 🚀 Teach Me Mailer
 
-[![CI](https://github.com/loguntsovae/teach-me-mailer/actions/workflows/ci.yml/badge.svg)](https://github.com/loguntsovae/teach-me-mailer/actions)
-[![codecov](https://codecov.io/gh/loguntsovae/teach-me-mailer/branch/main/graph/badge.svg)](https://codecov.io/gh/loguntsovae/teach-me-mailer)
+[![CI/CD](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/loguntsovae/TeachMeMailer/branch/develop/graph/badge.svg)](https://codecov.io/gh/loguntsovae/TeachMeMailer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A production-ready, scalable email service built with FastAPI. Features atomic rate limiting, comprehensive observability, and enterprise-grade security for high-volume email delivery.
@@ -125,6 +125,14 @@ SMTP_FROM_ADDRESS=your-email@gmail.com
 # Security
 CORS_ORIGINS=["http://localhost:3000"]
 MAX_REQUEST_SIZE=262144
+
+# Admin UI protection (optional)
+# Use BasicAuth for the admin UI (recommended for local/dev). Set both values to enable BasicAuth.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme
+
+# Alternatively, protect admin with a header X-ADMIN-KEY
+# ADMIN_API_KEY=some-very-secret-value
 
 # Observability
 LOG_LEVEL=INFO
@@ -390,6 +398,16 @@ make check-limits
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
+
+## 🔁 Example: Minimal client service
+
+A tiny example client that demonstrates how an external service can call this mailer is included at `examples/client_service`.
+
+- `examples/client_service/app.py` — minimal FastAPI app exposing `POST /trigger` which forwards requests to the mailer `/api/v1/send` endpoint using the `X-API-Key` header.
+- `examples/client_service/.env.example` — example configuration (set `MAILER_API_KEY` and `MAILER_SEND_URL`).
+- `examples/client_service/README.md` — quick start instructions for the example client.
+
+This example is intentionally minimal and intended for local testing and integration demonstrations. It does not attempt to be production-ready.
 
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Inspired by modern email service architectures

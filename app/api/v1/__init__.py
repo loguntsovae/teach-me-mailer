@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from .admin import router as admin_router
+
 # Aggregate sub-routers for v1
 from .health import router as health_router
 from .mail import router as mail_router
@@ -12,3 +14,4 @@ router = APIRouter()
 router.include_router(mail_router)
 router.include_router(usage_router)
 router.include_router(health_router)
+router.include_router(admin_router)

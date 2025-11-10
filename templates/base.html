@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title if title else "Admin" }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>{{ title if title else "Admin" }}</h1>
+      <nav>
+        <a href="/admin/api-keys">API Keys</a> |
+        <a href="/admin/daily-usage">Daily Usage</a> |
+        <a href="/admin/send-logs">Send Logs</a>
+      </nav>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">teach-me-mailer admin</footer>
+  </body>
+</html>

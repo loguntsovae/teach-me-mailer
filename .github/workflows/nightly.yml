@@ -1,0 +1,96 @@
+name: Nightly Tests
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  nightly-tests:
+    runs-on: ubuntu-latest
+    name: Nightly Full Test Suite
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_teach_me_mailer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --group dev --group test
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+        run: |
+          uv run python scripts/setup_test_db.py
+
+      - name: Run all tests with coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_teach_me_mailer
+          SMTP_HOST: smtp.test.com
+          SMTP_PORT: 587
+          SMTP_USER: test@test.com
+          SMTP_PASSWORD: test_password
+          SMTP_FROM: noreply@test.com
+          APP_SECRET_KEY: test-secret-key-for-testing-only-do-not-use-in-production
+        run: |
+          uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=html --durations=20
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: nightly
+          name: codecov-nightly
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Generate test report
+        if: always()
+        run: |
+          uv run pytest tests/ --html=report.html --self-contained-html
+        continue-on-error: true
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: nightly-test-report
+          path: |
+            report.html
+            htmlcov/
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Nightly Tests Failed',
+              body: 'Nightly test run failed. Check the workflow run for details.\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+              labels: ['bug', 'tests', 'automated']
+            })

@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # Mail Settings (REQUIRED)
     smtp_host: str = Field(
-        ...,  # Required field
+        default="smtp.example.com",
         alias="SMTP_HOST",
         description="SMTP server hostname",
     )
@@ -35,12 +35,12 @@ class Settings(BaseSettings):
         description="SMTP server port",
     )
     smtp_user: str = Field(
-        ...,  # Required field
+        default="user@example.com",
         alias="SMTP_USER",
         description="SMTP username",
     )
     smtp_password: str = Field(
-        ...,  # Required field
+        default="password",
         alias="SMTP_PASSWORD",
         description="SMTP password",
     )
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
         description="Use STARTTLS for SMTP",
     )
     from_email: str = Field(
-        ...,  # Required field
+        default="noreply@example.com",
         alias="FROM_EMAIL",
         description="Default sender email address",
     )
@@ -71,10 +71,26 @@ class Settings(BaseSettings):
 
     # Security (REQUIRED)
     app_secret_key: str = Field(
-        ...,  # Required field
+        default="x" * 32,
         alias="APP_SECRET_KEY",
         min_length=32,
         description="Secret key for signing tokens",
+    )
+    # Admin panel protection (optional)
+    admin_username: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_USERNAME",
+        description="Username for BasicAuth protecting the admin UI",
+    )
+    admin_password: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_PASSWORD",
+        description="Password for BasicAuth protecting the admin UI",
+    )
+    admin_api_key: Optional[str] = Field(
+        default=None,
+        alias="ADMIN_API_KEY",
+        description="Alternate simple API key to protect the admin UI (use with header X-ADMIN-KEY)",
     )
     api_key_length: int = Field(
         default=32,
@@ -181,13 +197,7 @@ def get_settings() -> Settings:
         # mypy sees required named args on the generated Settings signature;
         # in runtime pydantic reads environment variables so calling with no
         # args is valid. Silence the false-positive here.
-        return Settings(
-            SMTP_HOST="smtp.example.com",
-            SMTP_USER="user@example.com",
-            SMTP_PASSWORD="password",
-            FROM_EMAIL="noreply@example.com",
-            APP_SECRET_KEY="x" * 32,
-        )
+        return Settings()
     except Exception as e:
         print(f"❌ Configuration Error: {e}")
         print("💡 Check your environment variables and .env file")

@@ -30,6 +30,24 @@ async def send_mail(
         subject=request.subject[:50],
     )
 
+    # Step 0: Allowed recipients check — if the API key restricts recipients, enforce it here.
+    if api_key.allowed_recipients:
+        try:
+            allowed = [r.strip().lower() for r in api_key.allowed_recipients if r]
+        except Exception:
+            allowed = []
+
+        if str(request.to).strip().lower() not in allowed:
+            logger.warning(
+                "Recipient not allowed for API key",
+                api_key_id=str(api_key.id),
+                recipient=str(request.to),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Recipient is not allowed for this API key",
+            )
+
     # Single recipient count for this request
     email_count = 1
 
