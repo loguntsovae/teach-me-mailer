@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }} - Production-Ready Email Service</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem 1rem;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+
+      .header .emoji {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+      }
+
+      .header p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .status-badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+
+      .content {
+        padding: 2rem;
+      }
+
+      .section {
+        margin-bottom: 2.5rem;
+      }
+
+      .section h2 {
+        color: #667eea;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+      }
+
+      .feature-card {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+
+      .feature-card h3 {
+        color: #334155;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+      }
+
+      .feature-card p {
+        color: #64748b;
+        font-size: 0.95rem;
+      }
+
+      .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .tech-badge {
+        background: #e0e7ff;
+        color: #4338ca;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .api-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .api-link {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.2s, transform 0.2s;
+      }
+
+      .api-link:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+      }
+
+      .api-link.secondary {
+        background: #64748b;
+      }
+
+      .api-link.secondary:hover {
+        background: #475569;
+      }
+
+      .code-example {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-top: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .code-example .comment {
+        color: #94a3b8;
+      }
+
+      .code-example .string {
+        color: #86efac;
+      }
+
+      .code-example .keyword {
+        color: #a5b4fc;
+      }
+
+      .footer {
+        background: #f8fafc;
+        padding: 2rem;
+        text-align: center;
+        color: #64748b;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .header p {
+          font-size: 1rem;
+        }
+
+        .features-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .api-links {
+          flex-direction: column;
+        }
+
+        .api-link {
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <span class="emoji">🚀</span>
+        <h1>{{ app_name }}</h1>
+        <p>Production-ready, scalable email service built with FastAPI. Enterprise-grade security and comprehensive observability.</p>
+        <span class="status-badge">✓ Service Running v{{ version }}</span>
+      </div>
+
+      <div class="content">
+        <div class="section">
+          <h2>✨ Key Features</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <h3>⚡ High Performance</h3>
+              <p>Async FastAPI with sub-100ms response times and connection pooling</p>
+            </div>
+            <div class="feature-card">
+              <h3>🔐 Enterprise Security</h3>
+              <p>API key authentication with bcrypt + PBKDF2 encryption</p>
+            </div>
+            <div class="feature-card">
+              <h3>🎯 Atomic Rate Limiting</h3>
+              <p>Thread-safe PostgreSQL operations for reliable rate limiting</p>
+            </div>
+            <div class="feature-card">
+              <h3>📧 Reliable Delivery</h3>
+              <p>SMTP with retry logic and comprehensive error handling</p>
+            </div>
+            <div class="feature-card">
+              <h3>📊 Full Observability</h3>
+              <p>Prometheus metrics, structured logging, and Sentry integration</p>
+            </div>
+            <div class="feature-card">
+              <h3>🐳 Production Ready</h3>
+              <p>Docker containerization with health checks and CI/CD</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🛠️ Tech Stack</h2>
+          <div class="tech-stack">
+            <span class="tech-badge">FastAPI</span>
+            <span class="tech-badge">PostgreSQL</span>
+            <span class="tech-badge">aiosmtplib</span>
+            <span class="tech-badge">Prometheus</span>
+            <span class="tech-badge">Sentry</span>
+            <span class="tech-badge">Docker</span>
+            <span class="tech-badge">pytest</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🚀 Quick Start Example</h2>
+          <div class="code-example">
+<span class="comment"># Send email via API</span>
+curl -X POST <span class="string">"{{ base_url }}/api/v1/send"</span> \
+  -H <span class="string">"X-API-Key: your_api_key"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{
+    "to": "user@example.com",
+    "subject": "Hello! 👋",
+    "html_body": "&lt;h1&gt;Welcome!&lt;/h1&gt;",
+    "text_body": "Welcome!"
+  }'</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>📚 API Documentation & Resources</h2>
+          <div class="api-links">
+            {% if debug %}
+            <a href="/docs" class="api-link">📖 Interactive API Docs</a>
+            <a href="/redoc" class="api-link secondary">📄 ReDoc</a>
+            {% endif %}
+            <a href="/health" class="api-link secondary">💚 Health Check</a>
+            <a href="/admin/api-keys" class="api-link secondary">🔑 Admin Panel</a>
+            <a href="/metrics" class="api-link secondary">📊 Metrics</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><strong>{{ app_name }}</strong> - Built with ❤️ using FastAPI</p>
+        <p>Version {{ version }} | <a href="https://github.com/loguntsovae/teach-me-mailer" target="_blank">GitHub Repository</a></p>
+      </div>
+    </div>
+  </body>
+</html>

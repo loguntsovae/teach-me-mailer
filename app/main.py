@@ -10,6 +10,7 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from prometheus_fastapi_instrumentator import Instrumentator
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
@@ -249,16 +250,22 @@ def create_app() -> FastAPI:
 # Create app instance
 app = create_app()
 
+# Initialize templates for root page
+templates = Jinja2Templates(directory="templates")
+
 
 # Root endpoint redirect
 @app.get("/", include_in_schema=False)
-async def root():
-    """Root endpoint with basic info."""
+async def root(request: Request):
+    """Root endpoint with project information."""
     settings = get_settings()
-    return {
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "status": "running",
-        "docs": "/docs" if settings.debug else "disabled",
-        "health": "/health",
-    }
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "version": settings.app_version,
+            "debug": settings.debug,
+            "base_url": request.base_url.replace(trailing_slash=False),
+        },
+    )
