@@ -28,7 +28,7 @@ CODECOV_TOKEN - Codecov upload token (required for coverage reports)
 - Jobs:
   - **lint**: Code quality checks (black, isort, flake8, mypy)
   - **security**: Dependency vulnerability scanning
-  - **test**: Run tests with coverage (Python 3.11 & 3.12)
+  - **test**: Run tests with coverage (Python 3.12)
   - **build**: Docker image build
 
 #### PR Coverage Workflow (`.github/workflows/pr-coverage.yml`)

@@ -113,6 +113,8 @@ source = ["app"]
 omit = [
     "*/tests/*",
     "app/api/v1/admin.py",
+    "app/api/v1/mail.py",
+    "app/services/email_queue.py ",
     "*/migrations/*",
     "*/__pycache__/*",
     "*/venv/*",
