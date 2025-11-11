@@ -112,7 +112,7 @@ filterwarnings = [
 source = ["app"]
 omit = [
     "*/tests/*",
-    "*app/api/v1/*",
+    "app/api/v1/admin.py",
     "*/migrations/*",
     "*/__pycache__/*",
     "*/venv/*",
