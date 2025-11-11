@@ -28,7 +28,7 @@ CODECOV_TOKEN - Codecov upload token (required for coverage reports)
 - Jobs:
   - **lint**: Code quality checks (black, isort, flake8, mypy)
   - **security**: Dependency vulnerability scanning
-  - **test**: Run tests with coverage (Python 3.11 & 3.12)
+  - **test**: Run tests with coverage (Python 3.14)
   - **build**: Docker image build
 
 #### PR Coverage Workflow (`.github/workflows/pr-coverage.yml`)
@@ -98,6 +98,6 @@ Add these to README.md:
 ```markdown
 [![CI/CD](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml/badge.svg)](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/loguntsovae/TeachMeMailer/branch/develop/graph/badge.svg)](https://codecov.io/gh/loguntsovae/TeachMeMailer)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ```

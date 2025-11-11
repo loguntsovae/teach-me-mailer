@@ -6,6 +6,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.api_key import APIKey
 from app.models.daily_usage import DailyUsage
 from app.services.auth import AuthService
 
@@ -15,7 +16,7 @@ class TestUsageEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_usage_authorized(
-        self, test_client: AsyncClient, test_api_key: str, db_session: AsyncSession, test_settings
+        self, test_client: AsyncClient, test_api_key: APIKey, db_session: AsyncSession, test_settings
     ):
         """Test getting usage with valid API key."""
         response = await test_client.get(
@@ -162,7 +163,7 @@ class TestUsageEndpoint:
             assert data["remaining"] == 7
 
     @pytest.mark.asyncio
-    async def test_get_usage_zero_usage_initially(self, test_client: AsyncClient, test_api_key: str):
+    async def test_get_usage_zero_usage_initially(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test usage is zero for new API key."""
         response = await test_client.get(
             "/api/v1/usage",
@@ -177,7 +178,7 @@ class TestUsageEndpoint:
         assert today_usage >= 0
 
     @pytest.mark.asyncio
-    async def test_get_usage_json_content_type(self, test_client: AsyncClient, test_api_key: str):
+    async def test_get_usage_json_content_type(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test usage endpoint returns JSON."""
         response = await test_client.get(
             "/api/v1/usage",

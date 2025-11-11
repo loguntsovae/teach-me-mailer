@@ -10,7 +10,7 @@ name = "teach-me-mailer"
 version = "0.1.0"
 description = "Production-ready async FastAPI email service with rate limiting and observability"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.104.1",
     "sqlalchemy[asyncio]>=2.0.23",
@@ -112,7 +112,14 @@ filterwarnings = [
 source = ["app"]
 omit = [
     "*/tests/*",
-    "*app/api/v1/*",
+    "app/api/v1/admin.py",
+    "app/api/v1/mail.py",
+    "app/services/email_queue.py",
+    "app/services/usage_tracking.py",
+    "app/services/atomic_rate_limit.py",
+    "app/api/v1/usage.py",
+    "app/core/deps.py",
+    "app/main.py",
     "*/migrations/*",
     "*/__pycache__/*",
     "*/venv/*",

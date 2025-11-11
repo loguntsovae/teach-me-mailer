@@ -24,7 +24,7 @@ If applicable, add screenshots or log outputs to help explain your problem.
 
 **Environment:**
  - OS: [e.g. Ubuntu 20.04, macOS 12.0]
- - Python version: [e.g. 3.12.0]
+ - Python version: [e.g. 3.14.0]
  - Docker version: [e.g. 20.10.21]
  - Service version: [e.g. 1.0.0]
 

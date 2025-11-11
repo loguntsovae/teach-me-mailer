@@ -2,7 +2,6 @@
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.api_key import APIKey
@@ -13,7 +12,7 @@ class TestAuthFlow:
     """Test end-to-end authentication scenarios."""
 
     @pytest.mark.asyncio
-    async def test_api_key_authentication_success(self, test_client: AsyncClient, test_api_key: str):
+    async def test_api_key_authentication_success(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test successful API key authentication."""
         response = await test_client.post(
             "/api/v1/send",
@@ -293,7 +292,7 @@ class TestAuthFlow:
         assert "detail" in data
 
     @pytest.mark.asyncio
-    async def test_auth_persists_across_requests(self, test_client: AsyncClient, test_api_key: str):
+    async def test_auth_persists_across_requests(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test authentication works across multiple requests."""
         for i in range(5):
             response = await test_client.post(
@@ -331,7 +330,7 @@ class TestAuthFlow:
             assert response.status_code in [200, 202]
 
     @pytest.mark.asyncio
-    async def test_auth_with_usage_endpoint(self, test_client: AsyncClient, test_api_key: str):
+    async def test_auth_with_usage_endpoint(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test authentication works for usage endpoint."""
         response = await test_client.get(
             "/api/v1/usage",

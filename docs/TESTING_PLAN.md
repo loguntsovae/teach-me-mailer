@@ -449,7 +449,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.14'
       - name: Install dependencies
         run: |
           pip install -e ".[test]"
@@ -472,7 +472,7 @@ jobs:
 ```markdown
 [![Tests](https://github.com/loguntsovae/teach-me-mailer/workflows/Tests/badge.svg)](https://github.com/loguntsovae/teach-me-mailer/actions?query=workflow%3ATests)
 [![Coverage](https://codecov.io/gh/loguntsovae/teach-me-mailer/branch/main/graph/badge.svg)](https://codecov.io/gh/loguntsovae/teach-me-mailer)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ```
 

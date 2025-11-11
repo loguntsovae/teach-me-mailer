@@ -1,0 +1,9 @@
+
+
+try:
+    print("hello")
+    return 1
+except:
+    return 0
+finally:
+    return 2

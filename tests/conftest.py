@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import event, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -73,11 +73,11 @@ def test_settings() -> Settings:
     settings = Settings()
 
     # Restore old values
-    for key, value in old_env.items():
+    for key, value in old_env.items():  # type: ignore[assignment]
         if value is None:
             os.environ.pop(key, None)
         else:
-            os.environ[key] = value
+            os.environ[key] = str(value)
 
     return settings
 
@@ -112,11 +112,11 @@ def test_settings_with_allowlist() -> Settings:
 
     settings = Settings()
 
-    for key, value in old_env.items():
+    for key, value in old_env.items():  # type: ignore[assignment]
         if value is None:
             os.environ.pop(key, None)
         else:
-            os.environ[key] = value
+            os.environ[key] = str(value)
 
     return settings
 
@@ -191,7 +191,7 @@ async def test_api_key(db_session: AsyncSession) -> APIKey:
     await db_session.refresh(api_key)
 
     # Store raw key as attribute for use in tests
-    api_key.raw_key = raw_key  # type: ignore
+    api_key.raw_key = raw_key
 
     return api_key
 
@@ -217,7 +217,7 @@ async def test_api_key_inactive(db_session: AsyncSession) -> APIKey:
     await db_session.commit()
     await db_session.refresh(api_key)
 
-    api_key.raw_key = raw_key  # type: ignore
+    api_key.raw_key = raw_key
 
     return api_key
 
@@ -244,7 +244,7 @@ async def test_api_key_with_recipient_limit(db_session: AsyncSession) -> APIKey:
     await db_session.commit()
     await db_session.refresh(api_key)
 
-    api_key.raw_key = raw_key  # type: ignore
+    api_key.raw_key = raw_key
 
     return api_key
 
@@ -256,6 +256,35 @@ def mock_smtp() -> AsyncMock:
     # aiosmtplib.send returns a dict with recipient -> (code, message)
     mock.return_value = {"test@example.com": (250, "Message accepted")}
     return mock
+
+
+@pytest.fixture(autouse=True)
+def auto_mock_smtp(monkeypatch):
+    """
+    Automatically mock aiosmtplib.send for ALL tests to prevent real email sending.
+    This is a critical safety measure to ensure no emails are sent during testing.
+    """
+
+    async def mock_send(*args, **kwargs):
+        """Mock aiosmtplib.send - returns success response for any recipient."""
+        # Extract 'to' recipients from message
+        message = args[0] if args else kwargs.get("message")
+        recipients = []
+
+        if message is not None and hasattr(message, "get"):
+            to_header = message.get("To", "")
+            if to_header:
+                recipients = [email.strip() for email in to_header.split(",")]
+
+        # Default to single recipient if we can't parse
+        if not recipients:
+            recipients = ["test@example.com"]
+
+        # Return dict with success status for each recipient
+        return {recipient: (250, "Message accepted for delivery") for recipient in recipients}
+
+    monkeypatch.setattr("aiosmtplib.send", mock_send)
+    return mock_send
 
 
 @pytest.fixture

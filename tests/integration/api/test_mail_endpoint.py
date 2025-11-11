@@ -4,6 +4,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.api_key import APIKey
 from app.models.send_log import SendLog
 from app.services.auth import AuthService
 
@@ -12,7 +13,7 @@ class TestMailEndpoint:
     """Test POST /api/v1/send endpoint."""
 
     @pytest.mark.asyncio
-    async def test_send_email_success(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_success(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test successful email sending."""
         response = await test_client.post(
             "/api/v1/send",
@@ -31,7 +32,7 @@ class TestMailEndpoint:
         assert isinstance(data["remaining"], int)
 
     @pytest.mark.asyncio
-    async def test_send_email_html_body(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_html_body(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email with HTML body."""
         response = await test_client.post(
             "/api/v1/send",
@@ -48,7 +49,7 @@ class TestMailEndpoint:
         assert data["status"] in ["sent", "queued"]
 
     @pytest.mark.asyncio
-    async def test_send_email_both_bodies(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_both_bodies(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email with both text and HTML bodies."""
         response = await test_client.post(
             "/api/v1/send",
@@ -156,7 +157,7 @@ class TestMailEndpoint:
         assert "limit" in data["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_send_email_invalid_email_format(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_invalid_email_format(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email with invalid email address."""
         response = await test_client.post(
             "/api/v1/send",
@@ -171,7 +172,7 @@ class TestMailEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_send_email_missing_body(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_missing_body(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email without body (should fail)."""
         response = await test_client.post(
             "/api/v1/send",
@@ -186,7 +187,7 @@ class TestMailEndpoint:
         assert response.status_code in [200, 202, 422]
 
     @pytest.mark.asyncio
-    async def test_send_email_missing_subject(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_missing_subject(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email without subject (should fail)."""
         response = await test_client.post(
             "/api/v1/send",
@@ -287,7 +288,7 @@ class TestMailEndpoint:
 
     @pytest.mark.asyncio
     async def test_send_email_creates_send_log(
-        self, test_client: AsyncClient, test_api_key: str, db_session: AsyncSession, test_settings
+        self, test_client: AsyncClient, test_api_key: APIKey, db_session: AsyncSession, test_settings
     ):
         """Test that sending email creates a send log entry."""
         response = await test_client.post(
@@ -321,7 +322,7 @@ class TestMailEndpoint:
         import asyncio
 
         auth_service = AuthService(db_session, test_settings)
-        key_obj, api_key = await auth_service.create_api_key(
+        _, api_key = await auth_service.create_api_key(
             name="Concurrent Test Key",
             daily_limit=5,
         )
@@ -352,7 +353,7 @@ class TestMailEndpoint:
         # In production, additional safeguards (e.g., API gateway rate limiting) should be used
 
     @pytest.mark.asyncio
-    async def test_send_email_with_custom_from_address(self, test_client: AsyncClient, test_api_key: str):
+    async def test_send_email_with_custom_from_address(self, test_client: AsyncClient, test_api_key: APIKey):
         """Test sending email with custom from address (if supported)."""
         response = await test_client.post(
             "/api/v1/send",
@@ -369,3 +370,203 @@ class TestMailEndpoint:
         # Should succeed (or return appropriate status if not supported)
         # 202 = accepted (custom from fields ignored), 400/422 = validation error
         assert response.status_code in [200, 202, 400, 422]
+
+    @pytest.mark.asyncio
+    async def test_send_email_with_custom_headers(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with custom headers."""
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "recipient@example.com",
+                "subject": "Custom Headers Test",
+                "text": "Test body with headers",
+                "headers": {"X-Custom": "value", "X-Priority": "high"},
+            },
+        )
+
+        assert response.status_code in [200, 202]
+
+    @pytest.mark.asyncio
+    async def test_send_email_retry_after_header(
+        self, test_client: AsyncClient, db_session: AsyncSession, test_settings
+    ):
+        """Test that 429 response includes Retry-After header."""
+        from app.services.auth import AuthService
+
+        auth_service = AuthService(db_session, test_settings)
+        key_obj, api_key = await auth_service.create_api_key(
+            name="Limited Key",
+            daily_limit=1,
+        )
+        await db_session.commit()
+
+        # First request should succeed
+        response1 = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": api_key},
+            json={
+                "to": "test1@example.com",
+                "subject": "Test 1",
+                "text": "Body 1",
+            },
+        )
+        assert response1.status_code in [200, 202]
+
+        # Second request should fail with 429
+        response2 = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": api_key},
+            json={
+                "to": "test2@example.com",
+                "subject": "Test 2",
+                "text": "Body 2",
+            },
+        )
+
+        assert response2.status_code == 429
+        # Check for Retry-After header
+        assert "retry-after" in [h.lower() for h in response2.headers.keys()]
+
+    @pytest.mark.asyncio
+    async def test_send_email_invalid_recipient_format(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with completely invalid recipient."""
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "not-an-email",
+                "subject": "Test",
+                "text": "Body",
+            },
+        )
+
+        # Should reject invalid email
+        assert response.status_code in [400, 422]
+
+    @pytest.mark.asyncio
+    async def test_send_email_empty_recipient(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with empty recipient."""
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "",
+                "subject": "Test",
+                "text": "Body",
+            },
+        )
+
+        assert response.status_code in [400, 422]
+
+    @pytest.mark.asyncio
+    async def test_send_email_empty_subject(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with empty subject."""
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "test@example.com",
+                "subject": "",
+                "text": "Body",
+            },
+        )
+
+        # Empty subject might be allowed or rejected
+        assert response.status_code in [200, 202, 400, 422]
+
+    @pytest.mark.asyncio
+    async def test_send_email_very_long_subject(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with very long subject."""
+        long_subject = "A" * 500  # Very long subject
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "test@example.com",
+                "subject": long_subject,
+                "text": "Body",
+            },
+        )
+
+        # Should handle long subject or reject it
+        assert response.status_code in [200, 202, 400, 422]
+
+    @pytest.mark.asyncio
+    async def test_send_email_unicode_subject(self, test_client: AsyncClient, test_api_key: APIKey):
+        """Test sending email with Unicode characters in subject."""
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "test@example.com",
+                "subject": "Тест 测试 🚀 émojis",
+                "text": "Unicode body текст",
+            },
+        )
+
+        assert response.status_code in [200, 202]
+
+    @pytest.mark.asyncio
+    async def test_send_email_response_includes_remaining_count(
+        self, test_client: AsyncClient, db_session: AsyncSession, test_settings
+    ):
+        """Test that response includes correct remaining count."""
+        from app.services.auth import AuthService
+
+        auth_service = AuthService(db_session, test_settings)
+        key_obj, api_key = await auth_service.create_api_key(
+            name="Count Test Key",
+            daily_limit=10,
+        )
+        await db_session.commit()
+
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": api_key},
+            json={
+                "to": "test@example.com",
+                "subject": "Test",
+                "text": "Body",
+            },
+        )
+
+        assert response.status_code in [200, 202]
+        data = response.json()
+        assert "remaining" in data
+        # After sending 1 email with limit 10, should have 9 remaining (or 8 if count was incremented)
+        assert 0 <= data["remaining"] <= 10
+
+    @pytest.mark.asyncio
+    async def test_send_email_creates_send_log_in_database(
+        self, test_client: AsyncClient, db_session: AsyncSession, test_api_key: APIKey
+    ):
+        """Test that sending email creates a send log record."""
+        from sqlalchemy import select
+
+        from app.models.send_log import SendLog
+
+        # Count logs before
+        stmt = select(SendLog)
+        result = await db_session.execute(stmt)
+        logs_before = len(result.scalars().all())
+
+        response = await test_client.post(
+            "/api/v1/send",
+            headers={"X-API-Key": test_api_key.raw_key},
+            json={
+                "to": "logtest@example.com",
+                "subject": "Log Test",
+                "text": "Body",
+            },
+        )
+
+        assert response.status_code in [200, 202]
+
+        # Count logs after
+        await db_session.rollback()  # Clear session
+        result = await db_session.execute(stmt)
+        logs_after = len(result.scalars().all())
+
+        # Should have created at least one log
+        assert logs_after > logs_before

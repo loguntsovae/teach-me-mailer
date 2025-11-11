@@ -3,7 +3,7 @@
 [![CI/CD](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/loguntsovae/TeachMeMailer/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/loguntsovae/TeachMeMailer/branch/develop/graph/badge.svg)](https://codecov.io/gh/loguntsovae/TeachMeMailer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A production-ready, scalable email service built with FastAPI. Features atomic rate limiting, comprehensive observability, and enterprise-grade security for high-volume email delivery.
